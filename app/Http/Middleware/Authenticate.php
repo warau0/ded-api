@@ -25,8 +25,11 @@ class Authenticate {
     }
 
     $user = User::find($credentials->sub);
+    if (!$user) {
+      return response()->json(['error' => 'Invalid auth.'], 401);
+    }
 
-    $request->auth = $user;
+    $request->user = $user;
     return $next($request);
   }
 }
