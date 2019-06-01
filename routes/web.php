@@ -6,6 +6,8 @@ app('router')->post('login', 'AuthController@login');
 app('router')->get('key', function() { return str_random(32); });
 
 app('router')->group(['middleware' => 'auth'], function() {
+  app('router')->get('verify_token', function() { return 'OK'; });
+
   // TODO
   app('router')->get('notifications', function() { return ["notifications" => []]; });
 
