@@ -8,6 +8,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PlanController extends Controller {
+  protected function checkForOverlap($id, $userID, $day, $hour, $duration) {
+    $hours = [];
+
+    for ($i = $hour; $i < ($hour + $duration); $i++) {
+      array_push($hours, $i);
+    }
+
+    $plans = Plan::query()
+    ->where([
+      ['user_id', $userID],
+      ['id', '!=', $id],
+      ['day', $day]
+    ])
+    ->whereIn('start', $hours)
+    ->get();
+
+    return sizeof($plans) > 0;
+  }
+
   public function index(Request $request) {
     $user = $request->user;
     $plans = Plan::where('user_id', $user->id)->get();
@@ -33,10 +52,18 @@ class PlanController extends Controller {
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
+    $day = intval($request->input('day'));
+    $start = intval($request->input('start'));
+    $duration = intval($request->input('duration'));
+
+    if ($this->checkForOverlap($id, $user->id, $day, $start, $duration)) {
+      return response()->json(['error' => 'Another plan overlaps this period.'], Response::HTTP_BAD_REQUEST);
+    }
+
     $updateResult = $plan->update([
-      'day' => intval($request->input('day')),
-      'start' => intval($request->input('start')),
-      'duration' => intval($request->input('duration')),
+      'day' => $day,
+      'start' => $start,
+      'duration' => $duration,
       'color' => $request->input('color'),
       'text' => $request->input('text', ''),
     ]);
@@ -58,11 +85,20 @@ class PlanController extends Controller {
     ]);
 
     $user = $request->user;
+
+    $day = intval($request->input('day'));
+    $start = intval($request->input('start'));
+    $duration = intval($request->input('duration'));
+
+    if ($this->checkForOverlap(null, $user->id, $day, $start, $duration)) {
+      return response()->json(['error' => 'Another plan overlaps this period.'], Response::HTTP_BAD_REQUEST);
+    }
+
     $plan = new Plan([
         'user_id' => $user->id,
-        'day' => intval($request->input('day')),
-        'start' => intval($request->input('start')),
-        'duration' => intval($request->input('duration')),
+        'day' => $day,
+        'start' => $start,
+        'duration' => $duration,
         'color' => $request->input('color'),
         'text' => $request->input('text', ''),
     ]);
