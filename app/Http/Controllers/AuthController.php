@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\User;
 use App\Http\Controllers\Controller;
+use App\Rules\ValidRecaptcha;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use \Firebase\JWT\JWT;
@@ -28,6 +29,7 @@ class AuthController extends Controller {
       'username' => 'required|string|max:50|unique:users,username',
       'email' => 'sometimes|string|email|max:255|nullable',
       'password' => 'required|confirmed|min:6',
+      'recaptcha' => ['required', new ValidRecaptcha]
     ]);
 
     $user = User::create([
