@@ -15,7 +15,9 @@ use Intervention\Image\ImageManager;
 
 class SubmissionController extends Controller {
   public function index(Request $request) {
-    $submissions = Submission::query()->with(['tags', 'images'])->get();
+    $submissions = Submission::query()
+      ->with(['tags', 'images'])
+      ->get();
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);
   }
 
@@ -74,6 +76,7 @@ class SubmissionController extends Controller {
           $base64Image = clone $interventionImage;
           $hash = hash('sha256', $base64Image->encode('data-url'));
         } catch(NotReadableException $e) {
+          $submission->images()->delete();
           $submission->delete();
           return response()->json(['images' => 'Invalid or damaged image file, failed saving.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -86,6 +89,7 @@ class SubmissionController extends Controller {
           ['hash', '=', $hash]
         ])->first();
         if ($existingImage) {
+          $submission->images()->delete();
           $submission->delete();
           return response()->json(['images' => 'Duplicate image, failed saving.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -95,6 +99,7 @@ class SubmissionController extends Controller {
           case 'image/jpeg': break;
           case 'image/gif': break;
           default: {
+            $submission->images()->delete();
             $submission->delete();
             return response()->json(['images' => 'Not a jpeg, png or gif image, failed saving.'], Response::HTTP_UNPROCESSABLE_ENTITY);
           }
