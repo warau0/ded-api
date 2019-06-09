@@ -3,24 +3,25 @@
 use App\Extensions\Database\Schema\Blueprint;
 use App\Extensions\Database\Migrations\Migration;
 
-class CreateTagsTable extends Migration {
+class CreateSubmissionsTable extends Migration {
   public function up() {
-    $this->schema->create('tags', function (Blueprint $table) {
+    $this->schema->create('submissions', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
       $table->bigInteger('user_id')->unsigned();
-      $table->string('color')->default('sky');
-      $table->string('text');
+      $table->text('description');
+      $table->float('hours', 8, 2);
+      $table->boolean('nsfw')->default(false);
+      $table->boolean('private')->default(false);
       $table->timestamps();
       $table->softDeletes();
 
       $table->foreign('user_id')->references('id')->on('users');
-      $table->unique(array('user_id', 'text', 'deleted_at'));
     });
   }
 
   public function down() {
     $this->schema->disableForeignKeyConstraints();
-    $this->schema->dropIfExists('tags');
+    $this->schema->dropIfExists('submissions');
     $this->schema->enableForeignKeyConstraints();
   }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Rules\ValidRecaptcha;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
 use \Firebase\JWT\JWT;
 
 class AuthController extends Controller {
@@ -35,7 +36,7 @@ class AuthController extends Controller {
     $user = User::create([
       'username' => $request->input('username'),
       'email' => $request->input('email'),
-      'password' => app('hash')->make($request->input('password')),
+      'password' => Hash::make($request->input('password')),
     ]);
 
     if($user->save()) {
@@ -52,7 +53,7 @@ class AuthController extends Controller {
       return response()->json(['error' => 'Invalid username.'], 401);
     }
 
-    if (app('hash')->check($request->input('password'), $user->password)) {
+    if (Hash::check($request->input('password'), $user->password)) {
          return response()->json(['token' => $this->jwt($user)]);
      } else {
         return response()->json(['error' => 'Invalid password.'], 401);

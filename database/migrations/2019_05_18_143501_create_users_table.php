@@ -1,12 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Migrations\Migration;
+use App\Extensions\Database\Schema\Blueprint;
+use App\Extensions\Database\Migrations\Migration;
 
 class CreateUsersTable extends Migration {
   public function up() {
-    Schema::create('users', function (Blueprint $table) {
+    $this->schema->create('users', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
       $table->string('username');
       $table->string('email')->nullable();
@@ -17,6 +16,8 @@ class CreateUsersTable extends Migration {
   }
 
   public function down() {
-    Schema::dropIfExists('users');
+    $this->schema->disableForeignKeyConstraints();
+    $this->schema->dropIfExists('users');
+    $this->schema->enableForeignKeyConstraints();
   }
 }

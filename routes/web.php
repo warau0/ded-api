@@ -1,23 +1,31 @@
 <?php
 
-app('router')->post('register', 'AuthController@register');
-app('router')->post('login', 'AuthController@login');
+use Illuminate\Support\Facades\Route;
 
-app('router')->get('key', function() { return str_random(32); });
+Route::post('register', 'AuthController@register');
+Route::post('login', 'AuthController@login');
 
-app('router')->group(['middleware' => 'auth'], function() {
-  app('router')->get('verify_token', function() { return 'OK'; });
+Route::get('key', function() { return str_random(32); });
+
+Route::get('submissions', 'SubmissionController@index');
+
+Route::group(['middleware' => 'auth'], function() {
+  Route::get('verify_token', function() { return 'OK'; });
 
   // TODO
-  app('router')->get('notifications', function() { return ["notifications" => []]; });
+  Route::get('notifications', function() { return ["notifications" => []]; });
 
-  app('router')->get('plans', 'PlanController@index');
-  app('router')->put('plans/{id}', 'PlanController@update');
-  app('router')->post('plans', 'PlanController@store');
-  app('router')->delete('plans/{id}', 'PlanController@destroy');
+  Route::get('plans', 'PlanController@index');
+  Route::put('plans/{id}', 'PlanController@update');
+  Route::post('plans', 'PlanController@store');
+  Route::delete('plans/{id}', 'PlanController@destroy');
 
-  app('router')->get('tags', 'TagController@index');
-  app('router')->put('tags/{id}', 'TagController@update');
-  app('router')->post('tags', 'TagController@store');
-  app('router')->delete('tags/{id}', 'TagController@destroy');
+  Route::get('tags', 'TagController@index');
+  Route::put('tags/{id}', 'TagController@update');
+  Route::post('tags', 'TagController@store');
+  Route::delete('tags/{id}', 'TagController@destroy');
+
+  Route::put('submissions/{id}', 'SubmissionController@update');
+  Route::post('submissions', 'SubmissionController@store');
+  Route::delete('submissions/{id}', 'SubmissionController@destroy');
 });

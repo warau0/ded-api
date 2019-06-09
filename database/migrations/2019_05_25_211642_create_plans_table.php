@@ -1,18 +1,17 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Migrations\Migration;
+use App\Extensions\Database\Schema\Blueprint;
+use App\Extensions\Database\Migrations\Migration;
 
 class CreatePlansTable extends Migration {
   public function up() {
-    Schema::create('plans', function (Blueprint $table) {
+    $this->schema->create('plans', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
       $table->bigInteger('user_id')->unsigned();
       $table->integer('day')->unsigned();
       $table->integer('start')->unsigned();
       $table->integer('duration')->unsigned();
-      $table->string('color');
+      $table->string('color')->default('sky');
       $table->text('text');
       $table->timestamps();
       $table->softDeletes();
@@ -22,6 +21,6 @@ class CreatePlansTable extends Migration {
   }
 
   public function down() {
-    Schema::dropIfExists('plans');
+    $this->schema->dropIfExists('plans');
   }
 }
