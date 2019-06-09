@@ -27,7 +27,7 @@ class Submission extends Model {
   }
 
   public function images() {
-    return $this->belongsToMany(Image::class);
+    return $this->morphMany(Image::class, 'imageable', 'image_parent_type', 'image_parent_id');
   }
 
   public function tags() {

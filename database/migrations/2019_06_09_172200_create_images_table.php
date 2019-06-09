@@ -10,12 +10,12 @@ class CreateImagesTable extends Migration {
       $table->string('path');
       $table->string('name');
       $table->string('hash');
-      $table->integer('size');
-      $table->integer('height');
-      $table->integer('width');
+      $table->integer('size')->default(0);
+      $table->integer('height')->default(0);
+      $table->integer('width')->default(0);
       $table->string('extension');
-      $table->integer('imageable_id');
-      $table->string('imagable_type');
+      $table->bigInteger('image_parent_id')->unsigned();
+      $table->string('image_parent_type');
       $table->timestamps();
       $table->softDeletes();
     });
