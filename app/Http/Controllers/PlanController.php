@@ -41,6 +41,14 @@ class PlanController extends Controller {
   }
 
   public function update(Request $request, $id) {
+    $this->validate($request, [
+      'day' => 'required|integer|min:0|max:6',
+      'start' => 'required|integer|min:0|max:23',
+      'duration' => 'required|integer|min:1|max:24',
+      'color' => 'required|string',
+      'text' => 'sometimes|string|nullable',
+    ]);
+
     $plan = Plan::find($id);
     $user = $request->user;
 

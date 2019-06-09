@@ -15,4 +15,9 @@ app('router')->group(['middleware' => 'auth'], function() {
   app('router')->put('plans/{id}', 'PlanController@update');
   app('router')->post('plans', 'PlanController@store');
   app('router')->delete('plans/{id}', 'PlanController@destroy');
+
+  app('router')->get('tags', 'TagController@index');
+  app('router')->put('tags/{id}', 'TagController@update');
+  app('router')->post('tags', 'TagController@store');
+  app('router')->delete('tags/{id}', 'TagController@destroy');
 });
