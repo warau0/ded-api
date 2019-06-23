@@ -29,4 +29,25 @@ class Util {
     }
     return $subject;
   }
+
+  public static function imageName($originalName) {
+    $filename = time() . '_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($originalName));
+    $filename = self::replaceLast('_', '.', $filename);
+    return $filename;
+  }
+
+  public static function imageHash($interventionImage) {
+    $base64Image = clone $interventionImage;
+    $hash = hash('sha256', $base64Image->encode('data-url'));
+    return $hash;
+  }
+
+  public static function imageValidMime($interventionImage) {
+    switch($interventionImage->mime()) {
+      case 'image/png': return true;
+      case 'image/jpeg': return true;
+      case 'image/gif': return true;
+    }
+    return false;
+  }
 }

@@ -73,15 +73,13 @@ class SubmissionController extends Controller {
       foreach ($request->images as $image) {
         try {
           $interventionImage = $manager->make($image);
-          $base64Image = clone $interventionImage;
-          $hash = hash('sha256', $base64Image->encode('data-url'));
+          $hash = Util::imageHash($interventionImage);
         } catch(NotReadableException $e) {
           $submission->images()->delete();
           $submission->delete();
-          return response()->json(['images' => 'Invalid or damaged image file, failed saving.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+          return response()->json(['images' => 'Invalid or damaged image file, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        $filename = time() . '_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($image->getClientOriginalName()));
-        $filename = Util::replaceLast('_', '.', $filename);
+        $filename = Util::imageName($image->getClientOriginalName());
         $path = 'public/images/' . $user->id . '/original/';
 
         $existingImage = Image::where([
@@ -91,19 +89,14 @@ class SubmissionController extends Controller {
         if ($existingImage) {
           $submission->images()->delete();
           $submission->delete();
-          return response()->json(['images' => 'Duplicate image, failed saving.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+          return response()->json(['images' => 'Duplicate image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        switch($interventionImage->mime()) {
-          case 'image/png': break;
-          case 'image/jpeg': break;
-          case 'image/gif': break;
-          default: {
-            $submission->images()->delete();
-            $submission->delete();
-            return response()->json(['images' => 'Not a jpeg, png or gif image, failed saving.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-          }
-      }
+        if (!Util::imageValidMime($interventionImage)) {
+          $submission->images()->delete();
+          $submission->delete();
+          return response()->json(['images' => 'Not a jpeg, png or gif image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         $image->storeAs($path, $filename);
         $imageModel = new Image([
@@ -113,7 +106,7 @@ class SubmissionController extends Controller {
             'size' => $image->getSize(),
             'height' => $interventionImage->height(),
             'width' => $interventionImage->width(),
-            'extension' => $interventionImage->mime(),
+            'mime' => $interventionImage->mime(),
             'image_parent_id' => $submission->id,
             'image_parent_type' => Submission::class,
         ]);

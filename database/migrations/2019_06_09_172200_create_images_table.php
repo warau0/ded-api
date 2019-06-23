@@ -13,7 +13,7 @@ class CreateImagesTable extends Migration {
       $table->integer('size')->default(0);
       $table->integer('height')->default(0);
       $table->integer('width')->default(0);
-      $table->string('extension');
+      $table->string('mime');
       $table->bigInteger('image_parent_id')->unsigned();
       $table->string('image_parent_type');
       $table->timestamps();

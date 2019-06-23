@@ -15,7 +15,7 @@ class Image extends Model {
     'size',
     'height',
     'width',
-    'extension',
+    'mime',
     'image_parent_id',
     'image_parent_type',
   ];
