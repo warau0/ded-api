@@ -37,9 +37,7 @@ class Util {
   }
 
   public static function imageHash($interventionImage) {
-    $base64Image = clone $interventionImage;
-    $hash = hash('sha256', $base64Image->encode('data-url'));
-    return $hash;
+    return hash('sha256', $interventionImage->encode('data-url'));
   }
 
   public static function imageValidMime($interventionImage) {

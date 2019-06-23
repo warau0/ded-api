@@ -9,10 +9,10 @@ use App\Facades\Util;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\File;
 use Intervention\Image\Exception\NotWritableException;
 use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
-
 class SubmissionController extends Controller {
   public function index(Request $request) {
     $submissions = Submission::query()
@@ -77,7 +77,7 @@ class SubmissionController extends Controller {
         } catch(NotReadableException $e) {
           $submission->images()->delete();
           $submission->delete();
-          return response()->json(['images' => 'Invalid or damaged image file, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+          return response()->json(['images' => 'Damaged or too big (5 MB) image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         $filename = Util::imageName($image->getClientOriginalName());
         $path = 'public/images/' . $user->id . '/original/';
@@ -110,7 +110,59 @@ class SubmissionController extends Controller {
             'image_parent_id' => $submission->id,
             'image_parent_type' => Submission::class,
         ]);
-        $imageModel->save();
+
+        if ($imageModel->save()) {
+          try {
+            // Transparent parts of gif turn blue, png turn black
+            $interventionImage->fit(250, 250, function ($constraint) {
+                $constraint->upsize();
+            })->encode('jpg', 75);
+          } catch(Exception $e) {
+              return [
+                  'error' => 'Failed generating thumbnail, submission failed.',
+                  'error_code' => Response::HTTP_INTERNAL_SERVER_ERROR
+              ];
+          }
+
+          $thumbnailName = $filename;
+          $thumbnailFolder = storage_path('app/public/images/' . $user->id . '/thumbnails/');
+
+          if (!File::isDirectory($thumbnailFolder)) {
+              File::makeDirectory($thumbnailFolder, 0755, true);
+          }
+
+          try {
+              $interventionImage->save($thumbnailFolder . $thumbnailName);
+          } catch (NotWritableException $ex) {
+              $submission->images()->delete();
+              $submission->delete();
+              return [
+                  'error' => 'Could not save thumbnail to disk.',
+                  'error_code', Response::HTTP_INTERNAL_SERVER_ERROR
+              ];
+          }
+
+          $thumbSize = $interventionImage->getSize();
+          $thumbnailModel = new Image([
+            'name' => $filename,
+            'path' => $path,
+            'hash' => Util::imageHash($interventionImage),
+            'size' => 0,
+            'height' => $interventionImage->height(),
+            'width' => $interventionImage->width(),
+            'mime' => $interventionImage->mime(),
+            'image_parent_id' => $imageModel->id,
+            'image_parent_type' => Image::class,
+        ]);
+
+          if (!$thumbnailModel->save()) {
+            $submission->images()->delete();
+            $submission->delete();
+            return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+          }
+        } else {
+          return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
       }
 
       return response()->json($submission, Response::HTTP_OK);
@@ -120,6 +172,6 @@ class SubmissionController extends Controller {
   }
 
   public function destroy(Request $request) {
-    
+
   }
 }
