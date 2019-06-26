@@ -2,15 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', 'BullshitController@index');
 Route::post('register', 'AuthController@register');
 Route::post('login', 'AuthController@login');
 
-Route::get('key', function() { return str_random(32); });
+Route::get('key', 'BullshitController@randomKey');
 
 Route::get('submissions', 'SubmissionController@index');
 
 Route::group(['middleware' => 'auth'], function() {
-  Route::get('verify_token', function() { return 'OK'; });
+  Route::get('verify_token', 'BullshitController@ok');
 
   // TODO
   Route::get('notifications', function() { return ["notifications" => []]; });
