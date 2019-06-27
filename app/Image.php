@@ -28,7 +28,19 @@ class Image extends Model {
 
   protected $dates = ['deleted_at'];
 
+  protected $appends = [
+    'url',
+  ];
+
+  public function getUrlAttribute() {
+    return url('/images/{userID}/thumbnails') . '/' . $this->name;
+  }
+
   public function imageable() {
     return $this->morphTo();
+  }
+
+  public function thumbnail() {
+    return $this->morphOne(Image::class, 'imageable', 'image_parent_type', 'image_parent_id');
   }
 }

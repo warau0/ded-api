@@ -16,8 +16,13 @@ use Intervention\Image\ImageManager;
 class SubmissionController extends Controller {
   public function index(Request $request) {
     $submissions = Submission::query()
-      ->with(['tags', 'images'])
+      ->with(['tags', 'images.thumbnail'])
+      ->limit(48)
+      ->orderBy('id', 'desc')
+      ->where('private', false)
+      ->whereHas('images')
       ->get();
+
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);
   }
 

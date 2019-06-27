@@ -48,7 +48,7 @@ class BullshitController extends Controller {
           /  \  )  |      |
           \   \ /  '-.._  |
            '.ooO\__._.Ooo |
-    </pre>";
+</pre>";
   }
 
   public function randomKey() {
