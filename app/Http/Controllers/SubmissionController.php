@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\File;
 use Intervention\Image\Exception\NotWritableException;
 use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
+
 class SubmissionController extends Controller {
   public function index(Request $request) {
     $submissions = Submission::query()

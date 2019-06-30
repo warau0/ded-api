@@ -10,6 +10,8 @@ Route::get('key', 'BullshitController@randomKey');
 
 Route::get('submissions', 'SubmissionController@index');
 
+Route::get('users/{id}/submissions', 'UserController@submissions');
+
 Route::group(['middleware' => 'auth'], function() {
   Route::get('verify_token', 'BullshitController@ok');
 

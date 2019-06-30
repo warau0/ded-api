@@ -10,17 +10,17 @@ max_execution_time = 30
 max_input_time = 60
 memory_limit = 512M
 
+;;;;;;;;;;;;;;;;;
+; Data Handling ;
+;;;;;;;;;;;;;;;;;
+post_max_size = 128M
+
 ;;;;;;;;;;;;;;;;
 ; File Uploads ;
 ;;;;;;;;;;;;;;;;
 file_uploads = On
-upload_max_filesize = 5M
-max_file_uploads = 10
-
-;;;;;;;;;;;;;;;;;
-; Data Handling ;
-;;;;;;;;;;;;;;;;;
-post_max_size = 55M
+upload_max_filesize = 6M
+max_file_uploads = 20
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ; Dynamic Extensions ;
