@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Plan;
+use App\Facades\Util;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PlanController extends Controller {
+  private function log($code, $userID, $msg) {
+    Util::logLine(config('constants.LOG.PLAN'), $code, $userID, $msg);
+  }
+
   protected function checkForOverlap($id, $userID, $day, $hour, $duration) {
     $hours = [];
 
@@ -53,10 +58,12 @@ class PlanController extends Controller {
     $user = $request->user;
 
     if (!$plan) {
+      $this->log(1, $user->id, 'Update plan ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
     if ($user->id !== $plan->user_id) {
+      $this->log(2, $user->id, 'Update plan ' . $id . ' - forbidden');
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
@@ -65,6 +72,7 @@ class PlanController extends Controller {
     $duration = intval($request->input('duration'));
 
     if ($this->checkForOverlap($id, $user->id, $day, $start, $duration)) {
+      $this->log(3, $user->id, 'Update plan ' . $id . ' - period overlap');
       return response()->json(['error' => 'Another plan overlaps this period.'], Response::HTTP_BAD_REQUEST);
     }
 
@@ -77,8 +85,10 @@ class PlanController extends Controller {
     ]);
 
     if ($updateResult) {
-        return response()->json($plan->fresh(), Response::HTTP_OK);
+      $this->log(4, $user->id, 'Update plan ' . $id . ' - success');
+      return response()->json($plan->fresh(), Response::HTTP_OK);
     } else {
+      $this->log(5, $user->id, 'Update plan ' . $id . ' - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -99,6 +109,7 @@ class PlanController extends Controller {
     $duration = intval($request->input('duration'));
 
     if ($this->checkForOverlap(null, $user->id, $day, $start, $duration)) {
+      $this->log(6, $user->id, 'Save plan - period overlap');
       return response()->json(['error' => 'Another plan overlaps this period.'], Response::HTTP_BAD_REQUEST);
     }
 
@@ -112,8 +123,10 @@ class PlanController extends Controller {
     ]);
 
     if ($plan->save()) {
+      $this->log(7, $user->id, 'Save plan ' . $plan->id . ' - success');
       return response()->json($plan, Response::HTTP_OK);
     } else {
+      $this->log(8, $user->id, 'Save plan - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -123,18 +136,22 @@ class PlanController extends Controller {
     $user = $request->user;
 
     if (!$plan) {
+      $this->log(9, $user->id, 'Delete plan ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
     if ($user->id !== $plan->user_id) {
+      $this->log(10, $user->id, 'Delete plan ' . $id . ' - forbidden');
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
     $result = $plan->delete();
 
     if ($result) {
+      $this->log(11, $user->id, 'Delete plan ' . $id . ' - success');
       return response()->json($result, Response::HTTP_OK);
     } else {
+      $this->log(12, $user->id, 'Delete plan ' . $id . ' - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

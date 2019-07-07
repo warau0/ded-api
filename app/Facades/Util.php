@@ -3,12 +3,9 @@
 namespace App\Facades;
 
 use App\Tag;
+use Illuminate\Support\Facades\Log;
 
 class Util {
-  public static function saveImage($image) {
-
-  }
-
   public static function findExistingTagID($tagInput, $userID) {
     if (isset($tagInput->id)) return $tagInput->id;
 
@@ -47,5 +44,12 @@ class Util {
       case 'image/gif': return true;
     }
     return false;
+  }
+
+  public static function logLine($system, $code, $userID, $msg) {
+    Log::info('[' . str_pad($system, 3, '0', STR_PAD_LEFT) . '.' . str_pad($code, 3, '0', STR_PAD_LEFT) . ']'
+      . ' (User '. $userID .') '
+      . $msg
+    );
   }
 }
