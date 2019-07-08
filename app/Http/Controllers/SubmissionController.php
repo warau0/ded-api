@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Submission;
 use App\Tag;
 use App\Image;
+use App\Streak;
 use App\Facades\Util;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\File;
 use Intervention\Image\Exception\NotWritableException;
 use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
+use Carbon\Carbon;
 
 class SubmissionController extends Controller {
   private function log($code, $userID, $msg) {
@@ -204,7 +206,26 @@ class SubmissionController extends Controller {
       }
 
       // Bump streak
-      // TODO
+      $activeStreak = Streak::query()
+        ->where('user_id', $user->id)
+        ->whereNull('end')
+        ->first();
+      if ($activeStreak) {
+        $activeStreak->attemptBump();
+      } else {
+        $previousStreak = Streak::query()->where('user_id', $user->id)->orderBy('id', 'desc')->first();
+
+        $streak = new Streak();
+        $streak->start = Carbon::now();
+        $streak->count = 1;
+        $streak->user_id = $user->id;
+        $streak->frequency = $previousStreak ? $previousStreak->frequency : $request->input('frequency', 1);
+        if ($streak->save()) {
+          Util::logLine(config('constants.LOG.STREAK'), 1, $user->id, 'Create streak ' . $streak->id . ' - success');
+        } else {
+          Util::logLine(config('constants.LOG.STREAK'), 2, $user->id, 'Create streak - failed');
+        }
+      }
 
       $this->log(13, $user->id, 'Save submission ' . $submission->id . ' - success');
       return response()->json($submission, Response::HTTP_OK);
