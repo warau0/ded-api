@@ -48,7 +48,7 @@ class Util {
 
   public static function logLine($system, $code, $userID, $msg) {
     Log::info('[' . str_pad($system, 3, '0', STR_PAD_LEFT) . '.' . str_pad($code, 3, '0', STR_PAD_LEFT) . ']'
-      . ' (User '. $userID .') '
+      . ($userID ? ' (User '. $userID .') ' : ' (Guest) ')
       . $msg
     );
   }

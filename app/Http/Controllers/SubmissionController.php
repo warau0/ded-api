@@ -31,6 +31,22 @@ class SubmissionController extends Controller {
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);
   }
 
+  public function show(Request $request, $id) {
+    $submission = Submission::query()
+    ->with(['tags', 'images', 'user.avatar'])
+    ->where('private', false)
+    ->find($id);
+
+    $user = $request->user;
+
+    if (!$submission) {
+      $this->log(15, $user ? $user->id : null, 'Show submission ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    return response()->json(['submission' => $submission], Response::HTTP_OK);
+  }
+
   public function update(Request $request) {
     // TODO
   }

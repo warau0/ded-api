@@ -9,6 +9,7 @@ Route::post('login', 'AuthController@login');
 Route::get('key', 'BullshitController@randomKey');
 
 Route::get('submissions', 'SubmissionController@index');
+Route::get('submissions/{id}', 'SubmissionController@show');
 
 Route::get('users/{id}/submissions', 'UserController@submissions');
 

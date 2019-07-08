@@ -23,4 +23,12 @@ class User extends Model {
   protected $dates = [
     'deleted_at'
   ];
+
+  public function submissions() {
+    return $this->hasMany(Submission::class);
+  }
+
+  public function avatar() {
+    return $this->morphOne(Image::class, 'imageable', 'image_parent_type', 'image_parent_id');
+  }
 }
