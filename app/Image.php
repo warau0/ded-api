@@ -33,7 +33,8 @@ class Image extends Model {
   ];
 
   public function getUrlAttribute() {
-    return url('/images/{userID}/thumbnails') . '/' . $this->name;
+    $folder = ($this->image_parent_type === Image::class) ? '/thumbnails/' : '/original/';
+    return url('/images/{userID}') . $folder . $this->name;
   }
 
   public function imageable() {
