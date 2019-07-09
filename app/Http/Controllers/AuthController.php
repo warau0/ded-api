@@ -6,12 +6,17 @@ namespace App\Http\Controllers;
 use App\User;
 use App\Http\Controllers\Controller;
 use App\Rules\ValidRecaptcha;
+use App\Facades\Util;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use \Firebase\JWT\JWT;
 
 class AuthController extends Controller {
+  private function log($code, $userID, $msg) {
+    Util::logLine(config('constants.LOG.USER'), $code, $userID, $msg);
+  }
+
   // Generate JWT token for a user.
   protected function jwt(User $user) {
     $payload = [
@@ -40,8 +45,10 @@ class AuthController extends Controller {
     ]);
 
     if($user->save()) {
+      $this->log(1, $user->id, 'Register - success');
       return response()->json(['token' => $this->jwt($user)], Response::HTTP_OK);
     } else {
+      $this->log(2, null, 'Register - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -50,13 +57,16 @@ class AuthController extends Controller {
     $user = User::where('username', $request->input('username'))->first();
 
     if(empty($user)) {
+      $this->log(3, null, 'Login - invalid username');
       return response()->json(['error' => 'Invalid username.'], 401);
     }
 
     if (Hash::check($request->input('password'), $user->password)) {
-         return response()->json(['token' => $this->jwt($user)]);
+      $this->log(4, $user->id, 'Login - success');
+      return response()->json(['token' => $this->jwt($user)]);
      } else {
-        return response()->json(['error' => 'Invalid password.'], 401);
-     }
+      $this->log(5, null, 'Login - failed');
+      return response()->json(['error' => 'Invalid password.'], 401);
+    }
   }
 }

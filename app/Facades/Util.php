@@ -47,8 +47,15 @@ class Util {
   }
 
   public static function logLine($system, $code, $userID, $msg) {
+    $user = 'Guest';
+    if ($userID === -1) {
+      $user = 'System';
+    } else if ($userID > 0) {
+      $user = 'User ' . $userID;
+    }
+
     Log::info('[' . str_pad($system, 3, '0', STR_PAD_LEFT) . '.' . str_pad($code, 3, '0', STR_PAD_LEFT) . ']'
-      . ($userID ? ' (User '. $userID .') ' : ' (Guest) ')
+      . ' (' . $user . ') '
       . $msg
     );
   }

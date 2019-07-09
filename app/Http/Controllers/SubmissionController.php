@@ -216,7 +216,6 @@ class SubmissionController extends Controller {
         $previousStreak = Streak::query()->where('user_id', $user->id)->orderBy('id', 'desc')->first();
 
         $streak = new Streak();
-        $streak->start = Carbon::now();
         $streak->count = 1;
         $streak->user_id = $user->id;
         $streak->frequency = $previousStreak ? $previousStreak->frequency : $request->input('frequency', 1);

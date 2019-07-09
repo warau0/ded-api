@@ -14,7 +14,6 @@ class Streak extends Model {
     'user_id',
     'frequency',
     'count',
-    'start',
     'end',
   ];
 
@@ -64,7 +63,6 @@ class Streak extends Model {
       $this->save();
 
       $streak = new Streak();
-      $streak->start = Carbon::now();
       $streak->count = 1;
       $streak->user_id = $this->user_id;
       $streak->frequency = $this->frequency;

@@ -13,6 +13,8 @@ Route::get('submissions/{id}', 'SubmissionController@show');
 
 Route::get('users/{id}/submissions', 'UserController@submissions');
 
+Route::get('/streaks/end', 'StreakController@endExpired');
+
 Route::group(['middleware' => 'auth'], function() {
   Route::get('verify_token', 'BullshitController@ok');
 
@@ -32,4 +34,6 @@ Route::group(['middleware' => 'auth'], function() {
   Route::put('submissions/{id}', 'SubmissionController@update');
   Route::post('submissions', 'SubmissionController@store');
   Route::delete('submissions/{id}', 'SubmissionController@destroy');
+
+  Route::get('streaks/current', 'StreakController@show');
 });
