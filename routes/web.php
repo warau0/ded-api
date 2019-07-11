@@ -15,6 +15,8 @@ Route::get('users/{id}/submissions', 'UserController@submissions');
 
 Route::get('/streaks/end', 'StreakController@endExpired');
 
+Route::get('leaderboard', 'SubmissionController@monthlyLeaderboard');
+
 Route::group(['middleware' => 'auth'], function() {
   Route::get('verify_token', 'BullshitController@ok');
 

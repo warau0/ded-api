@@ -237,4 +237,20 @@ class SubmissionController extends Controller {
   public function destroy(Request $request) {
     // TODO
   }
+
+  public function monthlyLeaderboard(Request $request) {
+    $time = Carbon::now()->subMonths($request->input('offset', 0));
+    $period = $time->year . '-'.  str_pad($time->month,  2, '0', STR_PAD_LEFT);
+
+    $leaderboard = Submission::query()
+      ->select('users.id', 'users.username')
+      ->selectRaw('SUM(hours) as total_hours, DATE_FORMAT(submissions.created_at, \'%Y-%m\') as time_period') // 2019-07
+      ->having('time_period', '=', $period)
+      ->join('users', 'users.id', 'submissions.user_id')
+      ->groupBy('users.id', 'users.username', 'time_period')
+      ->orderBy('total_hours', 'desc')
+      ->get();
+
+    return response()->json(['leaderboard' => $leaderboard], Response::HTTP_OK);
+  }
 }
