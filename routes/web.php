@@ -8,16 +8,20 @@ Route::post('login', 'AuthController@login');
 
 Route::get('key', 'BullshitController@randomKey');
 
-Route::get('submissions', 'SubmissionController@index');
-Route::get('submissions/{id}', 'SubmissionController@show');
-
-Route::get('users/{id}/submissions', 'UserController@submissions');
-
-Route::get('/streaks/end', 'StreakController@endExpired');
-
-Route::get('leaderboard', 'SubmissionController@monthlyLeaderboard');
-
+// Attach user if available, but open to guests.
 Route::group(['middleware' => 'auth'], function() {
+  Route::get('submissions', 'SubmissionController@index');
+  Route::get('submissions/{id}', 'SubmissionController@show');
+
+  Route::get('users/{id}/submissions', 'UserController@submissions');
+
+  Route::get('/streaks/end', 'StreakController@endExpired');
+
+  Route::get('leaderboard', 'SubmissionController@monthlyLeaderboard');
+});
+
+// Only authed users.
+Route::group(['middleware' => 'protect'], function() {
   Route::get('verify_token', 'BullshitController@ok');
 
   // TODO

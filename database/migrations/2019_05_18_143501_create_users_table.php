@@ -7,7 +7,7 @@ class CreateUsersTable extends Migration {
   public function up() {
     $this->schema->create('users', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
-      $table->string('username');
+      $table->string('username')->unique();
       $table->string('email')->nullable();
       $table->string('password');
       $table->timestamps();

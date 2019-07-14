@@ -64,6 +64,7 @@ $app->middleware([
 
 $app->routeMiddleware([
   'auth' => App\Http\Middleware\Authenticate::class,
+  'protect' => App\Http\Middleware\Protect::class,
 ]);
 
 /*
