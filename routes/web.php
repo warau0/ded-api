@@ -12,6 +12,7 @@ Route::get('key', 'BullshitController@randomKey');
 Route::group(['middleware' => 'auth'], function() {
   Route::get('submissions', 'SubmissionController@index');
   Route::get('submissions/{id}', 'SubmissionController@show');
+  Route::get('submissions/{id}/comments', 'CommentController@showSubmission');
 
   Route::get('users/{id}/submissions', 'UserController@submissions');
 
@@ -40,6 +41,7 @@ Route::group(['middleware' => 'protect'], function() {
   Route::put('submissions/{id}', 'SubmissionController@update');
   Route::post('submissions', 'SubmissionController@store');
   Route::delete('submissions/{id}', 'SubmissionController@destroy');
+  Route::post('submissions/{id}/comments', 'CommentController@storeSubmission');
 
   Route::get('streaks/current', 'StreakController@show');
 });

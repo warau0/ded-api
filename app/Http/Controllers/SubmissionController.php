@@ -35,9 +35,9 @@ class SubmissionController extends Controller {
 
   public function show(Request $request, $id) {
     $submission = Submission::query()
-    ->with(['tags', 'images', 'user.avatar', 'comments'])
-    ->where('private', false)
-    ->find($id);
+      ->with(['tags', 'images', 'user.avatar', 'comments'])
+      ->where('private', false)
+      ->find($id);
 
     $user = $request->user;
 
