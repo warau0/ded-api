@@ -3,6 +3,7 @@
 namespace App\Facades;
 
 use App\Tag;
+use App\Comment;
 use Illuminate\Support\Facades\Log;
 
 class Util {
@@ -58,5 +59,22 @@ class Util {
       . ' (' . $user . ') '
       . $msg
     );
+  }
+
+  public static function trimText($text, $length = 30) {
+    return strlen($text) > $length ? substr($text, 0, $length) . '...' : $text;
+  }
+
+  public static function findCommentParent($comment) {
+    if ($comment->comment_parent_type === Comment::class) {
+      // Parent is another comment, try find it's parent instead.
+      $parentComment = Comment::find($comment->comment_parent_id);
+      return Util::findCommentParent($parentComment);
+    } else if ($comment->comment_parent_type) {
+      // Parent is something else, return the model.
+      return $comment->comment_parent_type::find($comment->comment_parent_id);
+    } else {
+      return $comment; // Has no parent.
+    }
   }
 }

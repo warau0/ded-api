@@ -67,10 +67,10 @@ class TagController extends Controller {
     ]);
 
     if ($tag->save()) {
-      $this->log(5, $tag->user_id, 'Save tag ' . $tag->id . ' - success');
+      $this->log(5, $tag->user_id, 'Create tag ' . $tag->id . ' - success');
       return response()->json($tag, Response::HTTP_OK);
     } else {
-      $this->log(6, $tag->user_id, 'Save tag - failed');
+      $this->log(6, $tag->user_id, 'Create tag - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

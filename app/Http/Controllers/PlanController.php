@@ -109,7 +109,7 @@ class PlanController extends Controller {
     $duration = intval($request->input('duration'));
 
     if ($this->checkForOverlap(null, $user->id, $day, $start, $duration)) {
-      $this->log(6, $user->id, 'Save plan - period overlap');
+      $this->log(6, $user->id, 'Create plan - period overlap');
       return response()->json(['error' => 'Another plan overlaps this period.'], Response::HTTP_BAD_REQUEST);
     }
 
@@ -123,10 +123,10 @@ class PlanController extends Controller {
     ]);
 
     if ($plan->save()) {
-      $this->log(7, $user->id, 'Save plan ' . $plan->id . ' - success');
+      $this->log(7, $user->id, 'Create plan ' . $plan->id . ' - success');
       return response()->json($plan, Response::HTTP_OK);
     } else {
-      $this->log(8, $user->id, 'Save plan - failed');
+      $this->log(8, $user->id, 'Create plan - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

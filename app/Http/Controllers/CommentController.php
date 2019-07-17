@@ -6,10 +6,13 @@ use App\Comment;
 use App\Submission;
 use App\Facades\Util;
 use App\Http\Controllers\Controller;
+use App\Traits\Notifies;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class CommentController extends Controller {
+  use Notifies;
+
   private function log($code, $userID, $msg) {
     Util::logLine(config('constants.LOG.COMMENT'), $code, $userID, $msg);
   }
@@ -34,20 +37,29 @@ class CommentController extends Controller {
     ]);
 
     $user = $request->user;
+    $anonymous = $request->input('anonymous', false);
+    $text = $request->input('text', '');
 
     $comment = new Comment([
       'user_id' => $user->id,
-      'anonymous' => $request->input('anonymous', false),
-      'text' => $request->input('text', ''),
+      'anonymous' => $anonymous,
+      'text' => $text,
       'comment_parent_id' => $id,
       'comment_parent_type' => Submission::class,
     ]);
 
     if ($comment->save()) {
-      $this->log(1, $user->id, 'Save comment ' . $comment->id . ' - success');
+      $this->log(1, $user->id, 'Create comment ' . $comment->id . ' - success');
+
+      $submission = Submission::find($id);
+      if ($submission->user_id !== $user->id) {
+        $notification = ($anonymous ? 'Someone' : $user->username) . ' left you a comment: ' . Util::trimText($text);
+        $this->createSubmissionNotification($notification, $submission->user_id, $id);
+      }
+
       return response()->json($comment, Response::HTTP_OK);
     } else {
-      $this->log(2, $user->id, 'Save comment - failed');
+      $this->log(2, $user->id, 'Create comment - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -60,19 +72,34 @@ class CommentController extends Controller {
 
     $user = $request->user;
 
+    $anonymous = $request->input('anonymous', false);
+    $text = $request->input('text', '');
+
     $comment = new Comment([
       'user_id' => $user->id,
-      'anonymous' => $request->input('anonymous', false),
-      'text' => $request->input('text', ''),
+      'anonymous' => $anonymous,
+      'text' => $text,
       'comment_parent_id' => $id,
       'comment_parent_type' => Comment::class,
     ]);
 
     if ($comment->save()) {
-      $this->log(3, $user->id, 'Save comment ' . $comment->id . ' - success');
+      $this->log(3, $user->id, 'Create comment ' . $comment->id . ' - success');
+
+      $parentComment = Comment::find($id);
+      $submission = Util::findCommentParent($parentComment);
+      if ($parentComment->user_id !== $user->id) {
+        $notification = ($anonymous ? 'Someone' : $user->username) . ' replied to you: ' . Util::trimText($text);
+        $this->createSubmissionNotification($notification, $parentComment->user_id, $submission->id);
+      }
+      if ($submission->user_id !== $user->id && $submission->user_id !== $parentComment->user_id) {
+        $notification = ($anonymous ? 'Someone' : $user->username) . ' left you a comment: ' . Util::trimText($text);
+        $this->createSubmissionNotification($notification, $submission->user_id, $submission->id);
+      }
+
       return response()->json($comment, Response::HTTP_OK);
     } else {
-      $this->log(4, $user->id, 'Save comment - failed');
+      $this->log(4, $user->id, 'Create comment - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

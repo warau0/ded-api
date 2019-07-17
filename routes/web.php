@@ -25,9 +25,6 @@ Route::group(['middleware' => 'auth'], function() {
 Route::group(['middleware' => 'protect'], function() {
   Route::get('verify_token', 'BullshitController@ok');
 
-  // TODO
-  Route::get('notifications', function() { return ["notifications" => []]; });
-
   Route::get('plans', 'PlanController@index');
   Route::put('plans/{id}', 'PlanController@update');
   Route::post('plans', 'PlanController@store');
@@ -46,4 +43,7 @@ Route::group(['middleware' => 'protect'], function() {
   Route::get('streaks/current', 'StreakController@show');
 
   Route::post('comments/{id}', 'CommentController@reply');
+
+  Route::get('notifications', 'NotificationController@index');
+  Route::post('notifications/seen', 'NotificationController@seen');
 });
