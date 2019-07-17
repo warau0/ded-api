@@ -51,4 +51,29 @@ class CommentController extends Controller {
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
+
+  public function reply(Request $request, $id) {
+    $this->validate($request, [
+      'anonymous' => 'sometimes|boolean',
+      'text' => 'required|string|max:5000',
+    ]);
+
+    $user = $request->user;
+
+    $comment = new Comment([
+      'user_id' => $user->id,
+      'anonymous' => $request->input('anonymous', false),
+      'text' => $request->input('text', ''),
+      'comment_parent_id' => $id,
+      'comment_parent_type' => Comment::class,
+    ]);
+
+    if ($comment->save()) {
+      $this->log(3, $user->id, 'Save comment ' . $comment->id . ' - success');
+      return response()->json($comment, Response::HTTP_OK);
+    } else {
+      $this->log(4, $user->id, 'Save comment - failed');
+      return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+  }
 }

@@ -44,4 +44,6 @@ Route::group(['middleware' => 'protect'], function() {
   Route::post('submissions/{id}/comments', 'CommentController@storeSubmission');
 
   Route::get('streaks/current', 'StreakController@show');
+
+  Route::post('comments/{id}', 'CommentController@reply');
 });
