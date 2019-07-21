@@ -23,7 +23,7 @@ class SubmissionController extends Controller {
 
   public function index(Request $request) {
     $submissions = Submission::query()
-      ->with(['tags', 'images.thumbnail'])
+      ->with('images.thumbnail')
       ->limit(48)
       ->orderBy('id', 'desc')
       ->where('private', false)
@@ -46,7 +46,35 @@ class SubmissionController extends Controller {
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
-    return response()->json(['submission' => $submission], Response::HTTP_OK);
+    $nextSubmission = Submission::selectRaw('min(id) as id')
+      ->where([['id', '>', $submission->id], ['private', '=', false]])->first();
+    $nextUserSubmission = Submission::selectRaw('min(id) as id')
+      ->where([['id', '>', $submission->id], ['user_id', '=', $submission->user_id], ['private', '=', false]])->first();
+
+    $previousSubmission = Submission::selectRaw('max(id) as id')
+      ->where([['id', '<', $submission->id], ['private', '=', false]])->first();
+    $previousUserSubmission = Submission::selectRaw('max(id) as id')
+      ->where([['id', '<', $submission->id], ['user_id', '=', $submission->user_id], ['private', '=', false]])->first();
+
+    $randomUserSubmissions = Submission::query()
+      ->with('images.thumbnail')
+      ->where([
+        ['user_id', '=', $submission->user_id],
+        ['id', '!=', $submission->id],
+        ['private', '=', false],
+      ])
+      ->inRandomOrder()
+      ->limit(6)
+      ->get();
+
+    return response()->json([
+      'submission' => $submission,
+      'next_submission_id' => $nextSubmission ? $nextSubmission->id : null,
+      'next_user_submission_id' => $nextUserSubmission ? $nextUserSubmission->id : null,
+      'previous_submission_id' => $previousSubmission ? $previousSubmission->id : null,
+      'previous_user_submission_id' => $previousUserSubmission ? $previousUserSubmission->id : null,
+      'user_submissions' => $randomUserSubmissions,
+    ], Response::HTTP_OK);
   }
 
   public function update(Request $request) {
