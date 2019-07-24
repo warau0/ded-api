@@ -19,7 +19,7 @@ class CommentController extends Controller {
 
   public function showSubmission(Request $request, $id) {
     $comments = Comment::query()
-      ->with(['comments', 'user'])
+      ->with(['comments', 'user.avatar'])
       ->where([
         ['comment_parent_id', '=', $id],
         ['comment_parent_type', '=', Submission::class],

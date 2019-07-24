@@ -33,7 +33,7 @@ class Submission extends Model {
   public function comments() {
     return $this->morphMany(Comment::class, 'commentable', 'comment_parent_type', 'comment_parent_id')
       ->orderBy('created_at', 'desc')
-      ->with(['comments', 'user']);
+      ->with(['comments.user.avatar', 'user.avatar']);
   }
 
   public function tags() {

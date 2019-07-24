@@ -181,10 +181,7 @@ class SubmissionController extends Controller {
             })->encode('jpg', 75);
           } catch(Exception $e) {
             $this->log(7, $user->id, 'Create submission ' . $submission->id . ' - thumbnailing failed for image ' . $imageModel->id);
-            return [
-              'error' => 'Failed generating thumbnail, submission failed.',
-              'error_code' => Response::HTTP_INTERNAL_SERVER_ERROR
-            ];
+            return response()->json(['error' => 'Failed generating thumbnail, submission failed.'], Response::HTTP_INTERNAL_SERVER_ERROR);
           }
 
           $thumbnailName = $filename;
@@ -202,10 +199,7 @@ class SubmissionController extends Controller {
               $submission->images()->delete();
               $submission->delete();
               $this->log(10, $user->id, 'Create submission ' . $submission->id . ' - not writable thumbnail for image ' . $imageModel->id);
-              return [
-                  'error' => 'Could not save thumbnail.',
-                  'error_code', Response::HTTP_INTERNAL_SERVER_ERROR
-              ];
+              return response()->json(['error' => 'Could not save thumbnail.'], Response::HTTP_INTERNAL_SERVER_ERROR);
           }
 
           $thumbSize = $interventionImage->getSize();
@@ -213,7 +207,7 @@ class SubmissionController extends Controller {
             'name' => $filename,
             'path' => $path,
             'hash' => Util::imageHash($interventionImage),
-            'size' => 0,
+            'size' => $interventionImage->filesize(),
             'height' => $interventionImage->height(),
             'width' => $interventionImage->width(),
             'mime' => $interventionImage->mime(),

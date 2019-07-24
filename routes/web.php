@@ -14,6 +14,7 @@ Route::group(['middleware' => 'auth'], function() {
   Route::get('submissions/{id}', 'SubmissionController@show');
   Route::get('submissions/{id}/comments', 'CommentController@showSubmission');
 
+  Route::get('users/{id}', 'UserController@show');
   Route::get('users/{id}/submissions', 'UserController@submissions');
 
   Route::get('/streaks/end', 'StreakController@endExpired');
@@ -46,4 +47,7 @@ Route::group(['middleware' => 'protect'], function() {
 
   Route::get('notifications', 'NotificationController@index');
   Route::post('notifications/seen', 'NotificationController@seen');
+
+  Route::get('avatar', 'UserController@getAvatar');
+  Route::post('avatar', 'UserController@updateAvatar');
 });

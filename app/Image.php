@@ -33,7 +33,12 @@ class Image extends Model {
   ];
 
   public function getUrlAttribute() {
-    $folder = ($this->image_parent_type === Image::class) ? '/thumbnails/' : '/original/';
+    switch ($this->image_parent_type) {
+      case $this->image_parent_type === Image::class: $folder = '/thumbnails/'; break;
+      case $this->image_parent_type === User::class: $folder = '/avatar/'; break;
+      default: $folder = '/original/'; break;
+    }
+
     return url('/images/{userID}') . $folder . $this->name;
   }
 
