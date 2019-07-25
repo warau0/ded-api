@@ -43,6 +43,7 @@ Route::group(['middleware' => 'protect'], function() {
 
   Route::get('streaks/current', 'StreakController@show');
 
+  Route::put('comments/{id}', 'CommentController@update');
   Route::post('comments/{id}', 'CommentController@reply');
 
   Route::get('notifications', 'NotificationController@index');

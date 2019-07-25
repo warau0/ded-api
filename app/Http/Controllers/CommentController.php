@@ -103,4 +103,35 @@ class CommentController extends Controller {
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
+
+  public function update(Request $request, $id) {
+    $this->validate($request, [
+      'text' => 'required|string|max:5000',
+    ]);
+
+    $comment = Comment::find($id);
+    $user = $request->user;
+
+    if (!$comment) {
+      $this->log(5, $user->id, 'Update comment ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    if ($user->id !== $comment->user_id) {
+      $this->log(6, $user->id, 'Update comment ' . $id . ' - forbidden');
+      return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
+    }
+
+    $updateResult = $comment->update([
+      'text' => $request->input('text'),
+    ]);
+
+    if ($updateResult) {
+      $this->log(7, $user->id, 'Update comment ' . $id . ' - success');
+      return response()->json($comment, Response::HTTP_OK);
+    } else {
+      $this->log(8, $user->id, 'Update comment ' . $id . ' - failed');
+      return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+  }
 }
