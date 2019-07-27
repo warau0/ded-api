@@ -45,14 +45,23 @@ class UserController extends Controller {
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
+    $loggedInUser = $request->user;
+    if ($loggedInUser && $user->id === $loggedInUser->id) {
+      $where = [
+        ['user_id', '=', $user->id]
+      ];
+    } else {
+      $where = [
+        ['private', '=', false],
+        ['user_id', '=', $user->id]
+      ];
+    }
+
     $submissions = Submission::query()
       ->with(['tags', 'images.thumbnail'])
       ->limit(48)
       ->orderBy('id', 'desc')
-      ->where([
-        ['private', '=', false],
-        ['user_id', '=', $user->id]
-      ])
+      ->where($where)
       ->whereHas('images')
       ->get();
 
