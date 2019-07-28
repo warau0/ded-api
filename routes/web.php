@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'BullshitController@index');
 Route::post('register', 'AuthController@register');
 Route::post('login', 'AuthController@login');
+Route::post('reset_password', 'AuthController@requestPasswordReset');
+Route::post('reset_password/set', 'AuthController@resetPassword');
 
 Route::get('key', 'BullshitController@randomKey');
 

@@ -138,7 +138,7 @@ class UserController extends Controller {
 
       $this->log(14, $user->id, 'Update avatar ' . $imageModel->id . ' - success');
       if ($deleteResult) {
-        $this->log(14, $user->id, 'Delete old avatars: ' . $deleteResult);
+        $this->log(15, $user->id, 'Delete old avatars: ' . $deleteResult);
       }
       return response()->json(['avatar' => $imageModel], Response::HTTP_OK);
     }
