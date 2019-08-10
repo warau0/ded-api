@@ -56,6 +56,6 @@ class BullshitController extends Controller {
   }
 
   public function ok() {
-    return "OK";
+    return response()->json(['status' => 'OK']);
   }
 }
