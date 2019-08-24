@@ -59,7 +59,7 @@ class AuthController extends Controller {
 
     if (empty($user)) {
       $this->log(3, null, 'Login - invalid username');
-      return response()->json(['error' => 'Invalid username.'], 401);
+      return response()->json(['error' => 'Invalid username.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     if (Hash::check($request->input('password'), $user->password)) {
@@ -67,7 +67,7 @@ class AuthController extends Controller {
       return response()->json(['token' => $this->jwt($user)]);
      } else {
       $this->log(5, null, 'Login - failed');
-      return response()->json(['error' => 'Invalid password.'], 401);
+      return response()->json(['error' => 'Invalid password.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
   }
 
@@ -82,12 +82,12 @@ class AuthController extends Controller {
 
     if (!isset($user)) {
       $this->log(16, null, 'Reset password - invalid username');
-      return response()->json(['error' => 'No user found with that username.'], 401);
+      return response()->json(['error' => 'No user found with that username.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     if (!isset($user->email)) {
       $this->log(17, null, 'Reset password - no email');
-      return response()->json(['error' => 'This user has no email registered.'], 401);
+      return response()->json(['error' => 'This user has no email registered.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     $deleteResult = PasswordReset::query()
@@ -133,7 +133,7 @@ class AuthController extends Controller {
 
     if (!isset($reset)) {
       $this->log(22, $request->input('user_id'), 'Reset password - no matching request found');
-      return response()->json(['error' => 'Invalid password reset token. Request a new password reset if the issue persists.'], 401);
+      return response()->json(['error' => 'Invalid password reset token. Request a new password reset if the issue persists.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     $update = User::query()
