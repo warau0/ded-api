@@ -10,15 +10,14 @@ use App\Facades\Util;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\File;
 use Intervention\Image\Exception\NotWritableException;
 use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
 use Carbon\Carbon;
 
 class SubmissionController extends Controller {
-  private function log($code, $userID, $msg) {
-    Util::logLine(config('constants.LOG.SUBMISSION'), $code, $userID, $msg);
+  private function log($userID, $msg) {
+    Util::logLine(config('constants.LOG.SUBMISSION'), $userID, $msg);
   }
 
   public function index(Request $request) {
@@ -44,7 +43,7 @@ class SubmissionController extends Controller {
       || (!$user && $submission->private)
       || ($user && $submission->private && $submission->user_id !== $user->id)
     ) {
-      $this->log(15, $user ? $user->id : null, 'Show submission ' . $id . ' - not found');
+      $this->log($user ? $user->id : null, 'Show submission ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
@@ -94,7 +93,7 @@ class SubmissionController extends Controller {
     ]);
 
     if (!$request->images) {
-      $this->log(1, $user->id, 'Create submission - no images');
+      $this->log($user->id, 'Create submission - no images');
       return response()->json(['images' => 'You have to upload at least one image.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
@@ -118,7 +117,7 @@ class SubmissionController extends Controller {
           'text' => $tagInput->value,
         ]);
         $tag->save();
-        $this->log(2, $user->id, 'Create submission - Create tag ' . $tag->id);
+        $this->log($user->id, 'Create submission - Create tag ' . $tag->id);
         $tagID = $tag->id;
       }
       array_push($tagIDs, $tagID);
@@ -128,6 +127,7 @@ class SubmissionController extends Controller {
       $submission->tags()->sync($tagIDs); // Attach tags
 
       $manager = new ImageManager(array('driver' => 'gd'));
+      $space = Util::connectToSpace();
 
       // Upload images
       foreach ($request->images as $image) {
@@ -137,11 +137,9 @@ class SubmissionController extends Controller {
         } catch(NotReadableException $e) {
           $submission->images()->delete();
           $submission->delete();
-          $this->log(3, $user->id, 'Create submission ' . $submission->id . ' - not readable image');
+          $this->log($user->id, 'Create submission ' . $submission->id . ' - not readable image');
           return response()->json(['images' => 'Damaged or too big (5 MB) image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        $filename = Util::imageName($image->getClientOriginalName());
-        $path = 'public/images/' . $user->id . '/original/';
 
         $existingImage = Image::where([
           ['size', '=', $image->getSize()],
@@ -150,22 +148,29 @@ class SubmissionController extends Controller {
         if ($existingImage) {
           $submission->images()->delete();
           $submission->delete();
-          $this->log(4, $user->id, 'Create submission ' . $submission->id . ' - duplicate image');
+          $this->log($user->id, 'Create submission ' . $submission->id . ' - duplicate image');
           return response()->json(['images' => 'Duplicate image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (!Util::imageValidMime($interventionImage)) {
           $submission->images()->delete();
           $submission->delete();
-          $this->log(5, $user->id, 'Create submission ' . $submission->id . ' - invalid mime');
+          $this->log($user->id, 'Create submission ' . $submission->id . ' - invalid mime');
           return response()->json(['images' => 'Not a jpeg, png or gif image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $image->storeAs($path, $filename);
-        $this->log(6, $user->id, 'Create submission ' . $submission->id . ' - save image ' . $path . $filename);
+        $imgName = Util::imageName($image->getClientOriginalName());
+
+        $fullPath = env('SPACES_FOLDER') . '/' . $user->id . '/images/' . $imgName;
+
+        // Use UploadedFile path to tmp upload file because intervention stream breaks gifs.
+        $response = $space->UploadFile($image->path(), 'public', $fullPath, $interventionImage->mime());
+        // TODO Handle failed upload.
+
+        $this->log($user->id, 'Create submission ' . $submission->id . ' - save image ' . $fullPath);
         $imageModel = new Image([
-          'name' => $filename,
-          'path' => $path,
+          'file' => $fullPath,
+          'url' => Util::replaceCDN($response['ObjectURL']),
           'hash' => $hash,
           'size' => $image->getSize(),
           'height' => $interventionImage->height(),
@@ -180,34 +185,23 @@ class SubmissionController extends Controller {
             // Transparent parts of gif turn blue, png turn black
             $interventionImage->fit(250, 250, function ($constraint) {
                 $constraint->upsize();
-            })->encode('jpg', 75);
+            })->encode('jpg');
           } catch(Exception $e) {
-            $this->log(7, $user->id, 'Create submission ' . $submission->id . ' - thumbnailing failed for image ' . $imageModel->id);
+            $this->log($user->id, 'Create submission ' . $submission->id . ' - thumbnailing failed for image ' . $imageModel->id);
             return response()->json(['error' => 'Failed generating thumbnail, submission failed.'], Response::HTTP_INTERNAL_SERVER_ERROR);
           }
 
-          $thumbnailName = $filename;
-          $thumbnailFolder = storage_path('app/public/images/' . $user->id . '/thumbnails/');
+          $thumbnailPath = env('SPACES_FOLDER') . '/' . $user->id . '/thumbnails/' . preg_replace('/.(gif|jpeg|png)/', '.jpg', $imgName);
 
-          if (!File::isDirectory($thumbnailFolder)) {
-            $this->log(8, $user->id, 'Create submission ' . $submission->id . ' - create folder ' . $thumbnailFolder);
-            File::makeDirectory($thumbnailFolder, 0755, true);
-          }
-
-          try {
-            $interventionImage->save($thumbnailFolder . $thumbnailName);
-            $this->log(9, $user->id, 'Create submission ' . $submission->id . ' - save thumbnail ' . $thumbnailFolder . $thumbnailName);
-          } catch (NotWritableException $ex) {
-              $submission->images()->delete();
-              $submission->delete();
-              $this->log(10, $user->id, 'Create submission ' . $submission->id . ' - not writable thumbnail for image ' . $imageModel->id);
-              return response()->json(['error' => 'Could not save thumbnail.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-          }
+          $thumbResponse = $space->UploadFile($interventionImage->stream(), 'public', $thumbnailPath, $interventionImage->mime());
+          // TODO Handle failed upload.
+            
+          $this->log($user->id, 'Create submission ' . $submission->id . ' - save thumbnail ' . $thumbnailPath);
 
           $thumbSize = $interventionImage->getSize();
           $thumbnailModel = new Image([
-            'name' => $filename,
-            'path' => $path,
+            'file' => $thumbnailPath,
+            'url' => Util::replaceCDN($thumbResponse['ObjectURL']),
             'hash' => Util::imageHash($interventionImage),
             'size' => $interventionImage->filesize(),
             'height' => $interventionImage->height(),
@@ -220,11 +214,11 @@ class SubmissionController extends Controller {
           if (!$thumbnailModel->save()) {
             $submission->images()->delete();
             $submission->delete();
-            $this->log(11, $user->id, 'Create submission ' . $submission->id . ' - failed saving thumbnail for image ' . $imageModel->id);
+            $this->log($user->id, 'Create submission ' . $submission->id . ' - failed saving thumbnail for image ' . $imageModel->id);
             return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
           }
         } else {
-          $this->log(12, $user->id, 'Create submission ' . $submission->id . ' - failed saving image');
+          $this->log($user->id, 'Create submission ' . $submission->id . ' - failed saving image');
           return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
       }
@@ -244,16 +238,16 @@ class SubmissionController extends Controller {
         $streak->user_id = $user->id;
         $streak->frequency = $previousStreak ? $previousStreak->frequency : $request->input('frequency', 1);
         if ($streak->save()) {
-          Util::logLine(config('constants.LOG.STREAK'), 1, $user->id, 'Create streak ' . $streak->id . ' - success');
+          Util::logLine(config('constants.LOG.STREAK'), $user->id, 'Create streak ' . $streak->id . ' - success');
         } else {
-          Util::logLine(config('constants.LOG.STREAK'), 2, $user->id, 'Create streak - failed');
+          Util::logLine(config('constants.LOG.STREAK'), $user->id, 'Create streak - failed');
         }
       }
 
-      $this->log(13, $user->id, 'Create submission ' . $submission->id . ' - success');
+      $this->log($user->id, 'Create submission ' . $submission->id . ' - success');
       return response()->json($submission, Response::HTTP_OK);
     } else {
-      $this->log(14, $user->id, 'Create submission - failed');
+      $this->log($user->id, 'Create submission - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

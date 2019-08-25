@@ -29,6 +29,7 @@ class Util {
   }
 
   public static function imageName($originalName) {
+    // Prepend timestamp and remove non alphanumeric characters
     $filename = time() . '_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($originalName));
     $filename = self::replaceLast('_', '.', $filename);
     return $filename;
@@ -47,7 +48,7 @@ class Util {
     return false;
   }
 
-  public static function logLine($system, $code, $userID, $msg) {
+  public static function logLine($system, $userID, $msg) {
     $user = 'Guest';
     if ($userID === -1) {
       $user = 'System';
@@ -55,7 +56,7 @@ class Util {
       $user = 'User ' . $userID;
     }
 
-    Log::info('[' . str_pad($system, 3, '0', STR_PAD_LEFT) . '.' . str_pad($code, 3, '0', STR_PAD_LEFT) . ']'
+    Log::info('[' . str_pad($system, 3, '0', STR_PAD_LEFT) . ']'
       . ' (' . $user . ') '
       . $msg
     );
@@ -287,5 +288,20 @@ class Util {
     } catch (Exception $e) {
       return $e->getMessage();
     }
+  }
+
+  public static function connectToSpace() {
+    $key = env('SPACES_KEY');
+    $secret = env('SPACES_SECRET');
+    $name = env('SPACES_NAME');
+    $region = env('SPACES_REGION');
+
+    return new \SpacesConnect($key, $secret, $name, $region);
+  }
+
+  public static function replaceCDN($url) {
+    $cdn = env('CDN_URL');
+    if (!$cdn) return $url;
+    return preg_replace('/https?:\/\/.+\.com/', $cdn, $url);
   }
 }

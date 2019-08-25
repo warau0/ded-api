@@ -7,8 +7,8 @@ class CreateImagesTable extends Migration {
   public function up() {
     $this->schema->create('images', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
-      $table->string('path');
-      $table->string('name');
+      $table->string('file');
+      $table->string('url');
       $table->string('hash');
       $table->integer('size')->default(0);
       $table->integer('height')->default(0);

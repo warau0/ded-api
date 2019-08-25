@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Hash;
 use \Firebase\JWT\JWT;
 
 class AuthController extends Controller {
-  private function log($code, $userID, $msg) {
-    Util::logLine(config('constants.LOG.USER'), $code, $userID, $msg);
+  private function log($userID, $msg) {
+    Util::logLine(config('constants.LOG.USER'), $userID, $msg);
   }
 
   // Generate JWT token for a user.
@@ -46,10 +46,10 @@ class AuthController extends Controller {
     ]);
 
     if($user->save()) {
-      $this->log(1, $user->id, 'Register - success');
+      $this->log($user->id, 'Register - success');
       return response()->json(['token' => $this->jwt($user)], Response::HTTP_OK);
     } else {
-      $this->log(2, null, 'Register - failed');
+      $this->log(null, 'Register - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -58,15 +58,15 @@ class AuthController extends Controller {
     $user = User::where('username', $request->input('username'))->first();
 
     if (empty($user)) {
-      $this->log(3, null, 'Login - invalid username');
+      $this->log(null, 'Login - invalid username');
       return response()->json(['error' => 'Invalid username.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     if (Hash::check($request->input('password'), $user->password)) {
-      $this->log(4, $user->id, 'Login - success');
+      $this->log($user->id, 'Login - success');
       return response()->json(['token' => $this->jwt($user)]);
      } else {
-      $this->log(5, null, 'Login - failed');
+      $this->log(null, 'Login - failed');
       return response()->json(['error' => 'Invalid password.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
   }
@@ -81,12 +81,12 @@ class AuthController extends Controller {
       ->first();
 
     if (!isset($user)) {
-      $this->log(16, null, 'Reset password - invalid username');
+      $this->log(null, 'Reset password - invalid username');
       return response()->json(['error' => 'No user found with that username.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     if (!isset($user->email)) {
-      $this->log(17, null, 'Reset password - no email');
+      $this->log(null, 'Reset password - no email');
       return response()->json(['error' => 'This user has no email registered.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
@@ -95,7 +95,7 @@ class AuthController extends Controller {
       ->delete();
 
     if ($deleteResult) {
-      $this->log(18, $user->id, 'Reset password - Old tokens deleted: ' . $deleteResult);
+      $this->log($user->id, 'Reset password - Old tokens deleted: ' . $deleteResult);
     }
 
     $passwordReset = PasswordReset::create([
@@ -106,14 +106,14 @@ class AuthController extends Controller {
     if($passwordReset->save()) {
       $response = Util::sendPasswordReset($user, $passwordReset);
       if (!$response) {
-        $this->log(19, $user->id, 'Register - email sent');
+        $this->log($user->id, 'Register - email sent');
         return response()->json(['status' => 'OK'], Response::HTTP_OK);
       } else {
-        $this->log(20, $user->id, 'Reset password - email failed: ' . $response);
+        $this->log($user->id, 'Reset password - email failed: ' . $response);
         return response()->json(['error' => $response], Response::HTTP_INTERNAL_SERVER_ERROR);
       }
     } else {
-      $this->log(21, $user->id, 'Reset password - create row failed');
+      $this->log($user->id, 'Reset password - create row failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -132,7 +132,7 @@ class AuthController extends Controller {
       ])->first();
 
     if (!isset($reset)) {
-      $this->log(22, $request->input('user_id'), 'Reset password - no matching request found');
+      $this->log($request->input('user_id'), 'Reset password - no matching request found');
       return response()->json(['error' => 'Invalid password reset token. Request a new password reset if the issue persists.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
@@ -143,10 +143,10 @@ class AuthController extends Controller {
 
     if($update) {
       $reset->delete();
-      $this->log(23, $user->id, 'Reset password - success');
+      $this->log($user->id, 'Reset password - success');
       return response()->json(['token' => $this->jwt($user)], Response::HTTP_OK);
     } else {
-      $this->log(24, $request->input('user_id'), 'Reset password - failed');
+      $this->log($request->input('user_id'), 'Reset password - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

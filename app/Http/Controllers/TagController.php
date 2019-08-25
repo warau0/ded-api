@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class TagController extends Controller {
-  private function log($code, $userID, $msg) {
-    Util::logLine(config('constants.LOG.TAG'), $code, $userID, $msg);
+  private function log($userID, $msg) {
+    Util::logLine(config('constants.LOG.TAG'), $userID, $msg);
   }
 
   public function index(Request $request) {
@@ -29,12 +29,12 @@ class TagController extends Controller {
     $user = $request->user;
 
     if (!$tag) {
-      $this->log(1, $tag->user_id, 'Update tag ' . $id . ' - not found');
+      $this->log($tag->user_id, 'Update tag ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
     if ($user->id !== $tag->user_id) {
-      $this->log(2, $tag->user_id, 'Update tag ' . $id . ' - forbidden');
+      $this->log($tag->user_id, 'Update tag ' . $id . ' - forbidden');
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
@@ -44,10 +44,10 @@ class TagController extends Controller {
     ]);
 
     if ($updateResult) {
-      $this->log(3, $tag->user_id, 'Update tag ' . $id . ' - success');
+      $this->log($tag->user_id, 'Update tag ' . $id . ' - success');
       return response()->json($tag, Response::HTTP_OK);
     } else {
-      $this->log(4, $tag->user_id, 'Update tag ' . $id . ' - failed');
+      $this->log($tag->user_id, 'Update tag ' . $id . ' - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -67,10 +67,10 @@ class TagController extends Controller {
     ]);
 
     if ($tag->save()) {
-      $this->log(5, $tag->user_id, 'Create tag ' . $tag->id . ' - success');
+      $this->log($tag->user_id, 'Create tag ' . $tag->id . ' - success');
       return response()->json($tag, Response::HTTP_OK);
     } else {
-      $this->log(6, $tag->user_id, 'Create tag - failed');
+      $this->log($tag->user_id, 'Create tag - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -80,22 +80,22 @@ class TagController extends Controller {
     $user = $request->user;
 
     if (!$tag) {
-      $this->log(7, $tag->user_id, 'Delete tag ' . $id . ' - not found');
+      $this->log($tag->user_id, 'Delete tag ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
     if ($user->id !== $tag->user_id) {
-      $this->log(8, $tag->user_id, 'Delete tag ' . $id . ' - forbidden');
+      $this->log($tag->user_id, 'Delete tag ' . $id . ' - forbidden');
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
     $result = $tag->delete();
 
     if ($result) {
-      $this->log(9, $tag->user_id, 'Delete tag ' . $id . ' - success');
+      $this->log($tag->user_id, 'Delete tag ' . $id . ' - success');
       return response()->json($result, Response::HTTP_OK);
     } else {
-      $this->log(10, $tag->user_id, 'Delete tag ' . $id . ' - failed');
+      $this->log($tag->user_id, 'Delete tag ' . $id . ' - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

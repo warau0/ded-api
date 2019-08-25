@@ -13,8 +13,8 @@ use Illuminate\Http\Response;
 class CommentController extends Controller {
   use Notifies;
 
-  private function log($code, $userID, $msg) {
-    Util::logLine(config('constants.LOG.COMMENT'), $code, $userID, $msg);
+  private function log($userID, $msg) {
+    Util::logLine(config('constants.LOG.COMMENT'), $userID, $msg);
   }
 
   public function showSubmission(Request $request, $id) {
@@ -49,7 +49,7 @@ class CommentController extends Controller {
     ]);
 
     if ($comment->save()) {
-      $this->log(1, $user->id, 'Create comment ' . $comment->id . ' - success');
+      $this->log($user->id, 'Create comment ' . $comment->id . ' - success');
 
       $submission = Submission::find($id);
       if ($submission->user_id !== $user->id) {
@@ -59,7 +59,7 @@ class CommentController extends Controller {
 
       return response()->json($comment, Response::HTTP_OK);
     } else {
-      $this->log(2, $user->id, 'Create comment - failed');
+      $this->log($user->id, 'Create comment - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -84,7 +84,7 @@ class CommentController extends Controller {
     ]);
 
     if ($comment->save()) {
-      $this->log(3, $user->id, 'Create comment ' . $comment->id . ' - success');
+      $this->log($user->id, 'Create comment ' . $comment->id . ' - success');
 
       $parentComment = Comment::find($id);
       $submission = Util::findCommentParent($parentComment);
@@ -99,7 +99,7 @@ class CommentController extends Controller {
 
       return response()->json($comment, Response::HTTP_OK);
     } else {
-      $this->log(4, $user->id, 'Create comment - failed');
+      $this->log($user->id, 'Create comment - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -113,12 +113,12 @@ class CommentController extends Controller {
     $user = $request->user;
 
     if (!$comment) {
-      $this->log(5, $user->id, 'Update comment ' . $id . ' - not found');
+      $this->log($user->id, 'Update comment ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
     if ($user->id !== $comment->user_id) {
-      $this->log(6, $user->id, 'Update comment ' . $id . ' - forbidden');
+      $this->log($user->id, 'Update comment ' . $id . ' - forbidden');
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
@@ -127,10 +127,10 @@ class CommentController extends Controller {
     ]);
 
     if ($updateResult) {
-      $this->log(7, $user->id, 'Update comment ' . $id . ' - success');
+      $this->log($user->id, 'Update comment ' . $id . ' - success');
       return response()->json($comment, Response::HTTP_OK);
     } else {
-      $this->log(8, $user->id, 'Update comment ' . $id . ' - failed');
+      $this->log($user->id, 'Update comment ' . $id . ' - failed');
       return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
   }

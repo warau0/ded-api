@@ -10,8 +10,8 @@ use Illuminate\Http\Response;
 use Carbon\Carbon;
 
 class StreakController extends Controller {
-  private function log($code, $userID, $msg) {
-    Util::logLine(config('constants.LOG.STREAK'), $code, $userID, $msg);
+  private function log($userID, $msg) {
+    Util::logLine(config('constants.LOG.STREAK'), $userID, $msg);
   }
 
   public function show(Request $request) {
@@ -35,14 +35,14 @@ class StreakController extends Controller {
       $streak->end = Carbon::now();
       if ($streak->save()) {
         $count++;
-        $this->log(8, -1, 'Ending streak ' . $streak->id . ' of ' . $streak->count .' - success');
+        $this->log(-1, 'Ending streak ' . $streak->id . ' of ' . $streak->count .' - success');
       } else {
-        $this->log(9, -1, 'Ending streak ' . $streak->id . ' of ' . $streak->count .' - failed');
+        $this->log(-1, 'Ending streak ' . $streak->id . ' of ' . $streak->count .' - failed');
       }
     }
 
     if ($count === 0) {
-      $this->log(10, -1, 'Ending streaks - no expired');
+      $this->log(-1, 'Ending streaks - no expired');
     }
 
     return response()->json(['ended' => $count], Response::HTTP_OK);

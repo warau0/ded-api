@@ -51,14 +51,14 @@ class Streak extends Model {
   // Try to increase streak.
   public function attemptBump() {
     if ($this->alreadyUpdated()) {
-      Util::logLine(config('constants.LOG.STREAK'), 3, $this->user_id, 'Update streak ' . $this->id . ' - already updated');
+      Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Update streak ' . $this->id . ' - already updated');
 
       return false;
     }
 
     if ($this->isExpired()) {
       // Should never happen, streak should already have been killed by day rollover job.
-      Util::logLine(config('constants.LOG.STREAK'), 4, $this->user_id, 'Update streak ' . $this->id . ' - manually ending');
+      Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Update streak ' . $this->id . ' - manually ending');
       $this->end = Carbon::now();
       $this->save();
 
@@ -67,16 +67,16 @@ class Streak extends Model {
       $streak->user_id = $this->user_id;
       $streak->frequency = $this->frequency;
       if ($streak->save()) {
-        Util::logLine(config('constants.LOG.STREAK'), 5, $this->user_id, 'Create streak ' . $streak->id . ' - success');
+        Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Create streak ' . $streak->id . ' - success');
       } else {
-        Util::logLine(config('constants.LOG.STREAK'), 6, $this->user_id, 'Create streak - failed');
+        Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Create streak - failed');
       }
 
       return true;
     }
 
     $this->count++;
-    Util::logLine(config('constants.LOG.STREAK'), 7, $this->user_id, 'Update streak ' . $this->id . ' - bump to ' . $this->count);
+    Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Update streak ' . $this->id . ' - bump to ' . $this->count);
 
     return $this->save();
   }

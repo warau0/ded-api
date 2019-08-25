@@ -9,8 +9,8 @@ class Image extends Model {
   use softDeletes;
 
   protected $fillable = [
-    'path',
-    'name',
+    'file',
+    'url',
     'hash',
     'size',
     'height',
@@ -27,20 +27,6 @@ class Image extends Model {
   ];
 
   protected $dates = ['deleted_at'];
-
-  protected $appends = [
-    'url',
-  ];
-
-  public function getUrlAttribute() {
-    switch ($this->image_parent_type) {
-      case $this->image_parent_type === Image::class: $folder = '/thumbnails/'; break;
-      case $this->image_parent_type === User::class: $folder = '/avatar/'; break;
-      default: $folder = '/original/'; break;
-    }
-
-    return url('/images/{userID}') . $folder . $this->name;
-  }
 
   public function imageable() {
     return $this->morphTo();

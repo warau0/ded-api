@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class NotificationController extends Controller {
-  private function log($code, $userID, $msg) {
-    Util::logLine(config('constants.LOG.COMMENT'), $code, $userID, $msg);
+  private function log($userID, $msg) {
+    Util::logLine(config('constants.LOG.COMMENT'), $userID, $msg);
   }
 
   public function index(Request $request) {
