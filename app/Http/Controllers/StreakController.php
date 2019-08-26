@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Streak;
 use App\Facades\Util;
 use App\Http\Controllers\Controller;
+use App\Traits\Notifies;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
 
 class StreakController extends Controller {
+  use Notifies;
+
   private function log($userID, $msg) {
     Util::logLine(config('constants.LOG.STREAK'), $userID, $msg);
   }
@@ -34,6 +37,7 @@ class StreakController extends Controller {
     foreach ($streaks as $key => $streak) {
       $streak->end = Carbon::now();
       if ($streak->save()) {
+        $this->createStreakEndNotification($streak->user_id, $streak->count);
         $count++;
         $this->log(-1, 'Ending streak ' . $streak->id . ' of ' . $streak->count .' - success');
       } else {

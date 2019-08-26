@@ -2,13 +2,14 @@
 
 namespace App;
 
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
-use App\Extensions\Database\Eloquent\SoftDeletes;
 use App\Facades\Util;
+use App\Traits\Notifies;
+use App\Extensions\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Streak extends Model {
-  use softDeletes;
+  use softDeletes, Notifies;
 
   protected $fillable = [
     'user_id',
@@ -61,6 +62,7 @@ class Streak extends Model {
       Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Update streak ' . $this->id . ' - manually ending');
       $this->end = Carbon::now();
       $this->save();
+      $this->createStreakEndNotification($this->user_id, $this->count);
 
       $streak = new Streak();
       $streak->count = 1;
@@ -68,11 +70,11 @@ class Streak extends Model {
       $streak->frequency = $this->frequency;
       if ($streak->save()) {
         Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Create streak ' . $streak->id . ' - success');
+        return true;
       } else {
         Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Create streak - failed');
+        return false;
       }
-
-      return true;
     }
 
     $this->count++;

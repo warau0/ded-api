@@ -20,10 +20,25 @@ trait Notifies {
     ]);
 
     if ($notification->save()) {
-      $this->log($userID, 'Create notification ' . $notification->id . ' - success');
+      $this->log($userID, 'Create submission notification ' . $notification->id . ' - success');
       return true;
     } else {
-      $this->log($userID, 'Create notification - failed');
+      $this->log($userID, 'Create submission notification - failed');
+      return false;
+    }
+  }
+
+  public function createStreakEndNotification($userID, $streak) {
+    $notification = new Notification([
+      'user_id' => $userID,
+      'text' => 'Your streak of ' . $streak . ' has ended.',
+    ]);
+
+    if ($notification->save()) {
+      $this->log($userID, 'Create streak end notification ' . $notification->id . ' - success');
+      return true;
+    } else {
+      $this->log($userID, 'Create streak end notification - failed');
       return false;
     }
   }
