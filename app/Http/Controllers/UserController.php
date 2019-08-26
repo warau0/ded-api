@@ -20,7 +20,7 @@ class UserController extends Controller {
 
   public function show(Request $request, $id) {
     $user = User::query()
-      ->where('username',  $id)
+      ->where('username',  urldecode($id))
       ->orWhere('id', $id)
       ->with('avatar')
       ->first();
@@ -36,7 +36,7 @@ class UserController extends Controller {
 
   public function submissions(Request $request, $id) {
     $user = User::query()
-      ->where('username',  $id)
+      ->where('username',  urldecode($id))
       ->orWhere('id', $id)
       ->first();
 
