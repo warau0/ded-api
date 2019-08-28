@@ -141,15 +141,18 @@ class SubmissionController extends Controller {
           return response()->json(['images' => 'Damaged or too big (5 MB) image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $existingImage = Image::where([
-          ['size', '=', $image->getSize()],
-          ['hash', '=', $hash]
-        ])->first();
-        if ($existingImage) {
-          $submission->images()->delete();
-          $submission->delete();
-          $this->log($user->id, 'Create submission ' . $submission->id . ' - duplicate image');
-          return response()->json(['images' => 'Duplicate image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        if (!env('ALLOW_DUPLICATE_SUBMISSIONS')) {
+          $existingImage = Image::where([
+            ['size', '=', $image->getSize()],
+            ['hash', '=', $hash],
+            ['image_parent_type', '=', Submission::class],
+          ])->first();
+          if ($existingImage) {
+            $submission->images()->delete();
+            $submission->delete();
+            $this->log($user->id, 'Create submission ' . $submission->id . ' - duplicate image');
+            return response()->json(['images' => 'Duplicate image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+          }
         }
 
         if (!Util::imageValidMime($interventionImage)) {
