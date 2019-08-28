@@ -92,12 +92,13 @@ class SubmissionController extends Controller {
       'tags.*.id' => 'sometimes|integer|nullable',
     ]);
 
+    $user = $request->user;
+
     if (!$request->images) {
       $this->log($user->id, 'Create submission - no images');
       return response()->json(['images' => 'You have to upload at least one image.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
-    $user = $request->user;
     $submission = new Submission([
         'user_id' => $user->id,
         'description' => $request->input('description', ''),
