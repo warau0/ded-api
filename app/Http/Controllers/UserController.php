@@ -70,6 +70,12 @@ class UserController extends Controller {
   public function updateAvatar(Request $request) {
     $user = $request->user;
     $image = $request->avatar;
+
+    if (!$request->input('has_data', false)) { // Requests that exceed post_max_size will trigger this.
+      $this->log($user->id, 'Update avatar - max post size exceeded');
+      return response()->json(['images' => 'Image too large (3 MB).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
     if (!isset($image)) {
       $this->log($user->id, 'Update avatar - no image');
       return response()->json(['avatar' => 'No image selected.'], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -80,9 +86,9 @@ class UserController extends Controller {
     try {
       $interventionImage = $manager->make($image);
       $hash = Util::imageHash($interventionImage);
-    } catch(NotReadableException $e) {
+    } catch(NotReadableException $e) { // Single files that exceed upload_max_filesize will trigger this.
       $this->log($user->id, 'Update avatar - not readable image');
-      return response()->json(['avatar' => 'Damaged or too big (5 MB) image.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+      return response()->json(['images' => 'Image too large (3 MB) or damaged.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     if (!Util::imageValidMime($interventionImage)) {

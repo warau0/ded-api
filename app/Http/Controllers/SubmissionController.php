@@ -94,6 +94,11 @@ class SubmissionController extends Controller {
 
     $user = $request->user;
 
+    if (!$request->input('has_data', false)) { // Requests that exceed post_max_size will trigger this.
+      $this->log($user->id, 'Create submission - max post size exceeded');
+      return response()->json(['images' => 'Image too large (3 MB), submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
     if (!$request->images) {
       $this->log($user->id, 'Create submission - no images');
       return response()->json(['images' => 'You have to upload at least one image.'], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -135,11 +140,11 @@ class SubmissionController extends Controller {
         try {
           $interventionImage = $manager->make($image);
           $hash = Util::imageHash($interventionImage);
-        } catch(NotReadableException $e) {
+        } catch(NotReadableException $e) { // Single files that exceed upload_max_filesize will trigger this.
           $submission->images()->delete();
           $submission->delete();
           $this->log($user->id, 'Create submission ' . $submission->id . ' - not readable image');
-          return response()->json(['images' => 'Damaged or too big (5 MB) image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+          return response()->json(['images' => 'Image too large (3 MB) or damaged, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (!env('ALLOW_DUPLICATE_SUBMISSIONS')) {
