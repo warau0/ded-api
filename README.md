@@ -13,14 +13,14 @@ memory_limit = 512M
 ;;;;;;;;;;;;;;;;;
 ; Data Handling ;
 ;;;;;;;;;;;;;;;;;
-post_max_size = 128M
+post_max_size = 35M
 
 ;;;;;;;;;;;;;;;;
 ; File Uploads ;
 ;;;;;;;;;;;;;;;;
 file_uploads = On
-upload_max_filesize = 6M
-max_file_uploads = 20
+upload_max_filesize = 3M
+max_file_uploads = 10
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ; Dynamic Extensions ;
