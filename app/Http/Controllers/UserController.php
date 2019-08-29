@@ -58,11 +58,10 @@ class UserController extends Controller {
 
     $submissions = Submission::query()
       ->with(['tags', 'images.thumbnail'])
-      ->limit(48)
       ->orderBy('id', 'desc')
       ->where($where)
       ->whereHas('images')
-      ->get();
+      ->simplePaginate(40);
 
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);
   }

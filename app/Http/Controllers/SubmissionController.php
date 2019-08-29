@@ -23,11 +23,10 @@ class SubmissionController extends Controller {
   public function index(Request $request) {
     $submissions = Submission::query()
       ->with('images.thumbnail')
-      ->limit(48)
       ->orderBy('id', 'desc')
       ->where('private', false)
       ->whereHas('images')
-      ->get();
+      ->simplePaginate(40);
 
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);
   }
