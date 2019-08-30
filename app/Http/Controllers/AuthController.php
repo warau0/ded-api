@@ -104,13 +104,13 @@ class AuthController extends Controller {
     ]);
 
     if($passwordReset->save()) {
-      $response = Util::sendPasswordReset($user, $passwordReset);
-      if (!$response) {
-        $this->log($user->id, 'Register - email sent');
+      $mailError = Util::sendPasswordReset($user, $passwordReset);
+      if (!$mailError) {
+        $this->log($user->id, 'Reset password - email sent');
         return response()->json(['status' => 'OK'], Response::HTTP_OK);
       } else {
-        $this->log($user->id, 'Reset password - email failed: ' . $response);
-        return response()->json(['error' => $response], Response::HTTP_INTERNAL_SERVER_ERROR);
+        $this->log($user->id, 'Reset password - email failed: ' . $mailError);
+        return response()->json(['error' => $mailError], Response::HTTP_INTERNAL_SERVER_ERROR);
       }
     } else {
       $this->log($user->id, 'Reset password - create row failed');
