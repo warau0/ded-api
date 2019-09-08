@@ -39,8 +39,9 @@ class AuthController extends Controller {
       'recaptcha' => ['required', new ValidRecaptcha]
     ]);
 
+    // TODO: Reject if username has special HTML characters.
     $user = User::create([
-      'username' => $request->input('username'),
+      'username' => trim(preg_replace('/\s+/', ' ', $request->input('username'))), // Combine and trim spaces
       'email' => $request->input('email'),
       'password' => Hash::make($request->input('password')),
     ]);
