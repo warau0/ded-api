@@ -27,10 +27,10 @@ class StreakController extends Controller {
     return response()->json(['streak' => $streak], Response::HTTP_OK);
   }
 
-  // Find and expire all streaks past their update window.
+  // Find and expire all streaks that haven't been updated in a week
   public function endExpired() {
     $streaks = Streak::query()
-      ->whereRaw('DATE(updated_at) <= DATE_SUB(UTC_DATE(), INTERVAL frequency + 1 day) AND count != 0 AND end IS NULL')
+      ->whereRaw('DATE(updated_at) <= DATE_SUB(UTC_DATE(), INTERVAL 7 + 1 day) AND count != 0 AND end IS NULL')
       ->get();
 
     $count = 0;

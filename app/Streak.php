@@ -13,7 +13,6 @@ class Streak extends Model {
 
   protected $fillable = [
     'user_id',
-    'frequency',
     'count',
     'end',
   ];
@@ -28,25 +27,23 @@ class Streak extends Model {
     return $this->belongsTo(User::class);
   }
 
-  // Check if the streak hasn't been updated and is now dead.
+  // Check if the streak hasn't been updated in a week and is now dead.
   private function isExpired() {
     $updatedDaysAgo = Carbon::now()->setTime(0, 0, 0)
       ->diff(Carbon::parse($this->updated_at)->setTime(0, 0, 0))->days;
 
-    return $updatedDaysAgo > $this->frequency;
+    return $updatedDaysAgo > 7;
   }
 
   // Check if it's time to bump up streak.
   private function alreadyUpdated() {
     if ($this->count == 0) return false; // Always let empty streaks be updated.
 
-    $updatedDaysAgo = Carbon::now()->setTime(0, 0, 0)
-        ->diff(Carbon::parse($this->updated_at)->setTime(0, 0, 0))->days;
+    $now = Carbon::now()->setTime(0, 0, 0);
+    $updated = Carbon::parse($this->updated_at)->setTime(0, 0, 0);
+    $updatedDaysAgo = $now->diff($updated)->days;
 
-    return $updatedDaysAgo < $this->frequency; // Only bump streak when posting on the last day
-    // If post frequency is 4 days, you MUST post 4 days apart for streak to update and not expire.
-    // If posted on day 3, it will say streak has already been updated and ignore updating streak.
-    // If posting on day 5 the streak has died.
+    return $updatedDaysAgo < 1; // Bump streak if it's been a day since last time.
   }
 
   // Try to increase streak.
@@ -67,7 +64,6 @@ class Streak extends Model {
       $streak = new Streak();
       $streak->count = 1;
       $streak->user_id = $this->user_id;
-      $streak->frequency = $this->frequency;
       if ($streak->save()) {
         Util::logLine(config('constants.LOG.STREAK'), $this->user_id, 'Create streak ' . $streak->id . ' - success');
         return true;

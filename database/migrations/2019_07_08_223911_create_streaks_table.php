@@ -8,7 +8,7 @@ class CreateStreaksTable extends Migration {
     $this->schema->create('streaks', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
       $table->bigInteger('user_id')->unsigned();
-      $table->integer('frequency');
+      $table->integer('frequency'); // Dropped in later migration.
       $table->integer('count');
       $table->dateTime('end')->nullable();
       $table->timestamps();

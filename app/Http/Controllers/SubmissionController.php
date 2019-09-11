@@ -244,7 +244,6 @@ class SubmissionController extends Controller {
         $streak = new Streak();
         $streak->count = 1;
         $streak->user_id = $user->id;
-        $streak->frequency = $previousStreak ? $previousStreak->frequency : $request->input('frequency', 1);
         if ($streak->save()) {
           Util::logLine(config('constants.LOG.STREAK'), $user->id, 'Create streak ' . $streak->id . ' - success');
         } else {
