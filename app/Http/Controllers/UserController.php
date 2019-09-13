@@ -6,14 +6,15 @@ use App\Submission;
 use App\User;
 use App\Image;
 use App\Facades\Util;
+use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Intervention\Image\Exception\NotWritableException;
-use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
 
 class UserController extends Controller {
+  use SavesImages;
+
   private function log($userID, $msg) {
     Util::logLine(config('constants.LOG.USER'), $userID, $msg);
   }
@@ -72,7 +73,7 @@ class UserController extends Controller {
 
     if (!$request->input('has_data', false)) { // Requests that exceed post_max_size will trigger this.
       $this->log($user->id, 'Update avatar - max post size exceeded');
-      return response()->json(['images' => 'Image too large (3 MB).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+      return response()->json(['avatar' => 'Image too large (3 MB).'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     if (!isset($image)) {
@@ -81,64 +82,26 @@ class UserController extends Controller {
     }
 
     $manager = new ImageManager(array('driver' => 'gd'));
-
-    try {
-      $interventionImage = $manager->make($image);
-      $hash = Util::imageHash($interventionImage);
-    } catch(NotReadableException $e) { // Single files that exceed upload_max_filesize will trigger this.
-      $this->log($user->id, 'Update avatar - not readable image');
-      return response()->json(['images' => 'Image too large (3 MB) or damaged.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-    }
-
-    if (!Util::imageValidMime($interventionImage)) {
-      $this->log($user->id, 'Update avatar - invalid mime');
-      return response()->json(['avatar' => 'Not a jpeg, png or gif image.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-    }
-
-    try {
-      // Transparent parts of gif turn blue, png turn black
-      $interventionImage->fit(100, 100, function ($constraint) {
-          $constraint->upsize();
-      })->encode('jpg');
-    } catch(Exception $e) {
-      $this->log($user->id, 'Update avatar - encoding failed');
-      return response()->json(['error' => 'Failed generating thumbnail.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
-
-    $fullPath = env('SPACES_FOLDER') . '/' . $user->id . '/avatars/'
-      . Util::imageName($image->getClientOriginalName());
-
     $space = Util::connectToSpace();
-    $response = $space->UploadFile($interventionImage->stream(), 'public', $fullPath, $interventionImage->mime());
-    // TODO Handle failed upload. $this->log($user->id, 'Update avatar - not writable image');
-    $this->log($user->id, 'Update avatar - save image ' . $fullPath);
+    $imageResult = $this->saveImage($manager, $space, $image, $user->id, 'avatars', User::class, $user->id, 100);
 
-    $imageModel = new Image([
-      'file' => $fullPath,
-      'url' => Util::replaceCDN($response['ObjectURL']),
-      'hash' => $hash,
-      'size' => $interventionImage->filesize(),
-      'height' => $interventionImage->height(),
-      'width' => $interventionImage->width(),
-      'mime' => $interventionImage->mime(),
-      'image_parent_id' => $user->id,
-      'image_parent_type' => User::class,
-    ]);
-
-    if ($imageModel->save()) {
+    if ($imageResult['error']) {
+      $this->log($user->id, 'Update avatar - ' . $imageResult['error']);
+      return response()->json(['avatar' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
+    } else {
       $deleteResult = Image::where([
         ['image_parent_id', '=', $user->id],
         ['image_parent_type', '=', User::class],
-        ['id', '!=', $imageModel->id]
+        ['id', '!=', $imageResult['image']->id]
       ])->delete(); // Delete any old avatars.
 
       // TODO Delete old avatar in space.
 
-      $this->log($user->id, 'Update avatar ' . $imageModel->id . ' - success');
+      $this->log($user->id, 'Update avatar ' . $imageResult['image']->id . ' - success');
       if ($deleteResult) {
         $this->log($user->id, 'Delete old avatars: ' . $deleteResult);
       }
-      return response()->json(['avatar' => $imageModel], Response::HTTP_OK);
+      return response()->json(['avatar' => $imageResult['image']], Response::HTTP_OK);
     }
   }
 

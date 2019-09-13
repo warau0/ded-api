@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Comment;
 use App\Submission;
+use App\Image;
 use App\Facades\Util;
 use App\Http\Controllers\Controller;
 use App\Traits\Notifies;
+use App\Traits\SavesImages;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Intervention\Image\ImageManager;
 
 class CommentController extends Controller {
-  use Notifies;
+  use Notifies, SavesImages;
 
   private function log($userID, $msg) {
     Util::logLine(config('constants.LOG.COMMENT'), $userID, $msg);
@@ -19,7 +22,7 @@ class CommentController extends Controller {
 
   public function showSubmission(Request $request, $id) {
     $comments = Comment::query()
-      ->with(['comments', 'user.avatar'])
+      ->with(['comments.image.thumbnail', 'user.avatar', 'image.thumbnail'])
       ->where([
         ['comment_parent_id', '=', $id],
         ['comment_parent_type', '=', Submission::class],
@@ -36,9 +39,16 @@ class CommentController extends Controller {
       'text' => 'required|string|max:5000',
     ]);
 
+    
     $user = $request->user;
     $anonymous = $request->input('anonymous', false);
     $text = $request->input('text', '');
+    $image = $request->image;
+
+    if (!$request->input('has_data', false)) { // Requests that exceed post_max_size will trigger this.
+      $this->log($user->id, 'Create comment - max post size exceeded');
+      return response()->json(['image' => 'Image too large (3 MB).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
 
     $comment = new Comment([
       'user_id' => $user->id,
@@ -50,6 +60,25 @@ class CommentController extends Controller {
 
     if ($comment->save()) {
       $this->log($user->id, 'Create comment ' . $comment->id . ' - success');
+
+      if (isset($image)) {
+        $manager = new ImageManager(array('driver' => 'gd'));
+        $space = Util::connectToSpace();
+        
+        $imageResult = $this->saveImage($manager, $space, $image, $user->id, 'images', Comment::class, $comment->id, null);
+
+        if ($imageResult['error']) {
+          $this->log($user->id, 'Create comment ' . $comment->id . ' - ' . $imageResult['error']);
+          return response()->json(['image' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } else {
+          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 250);
+  
+          if ($thumbnailResult['error']) {
+            $this->log($user->id, 'Create comment '. $comment->id . ' thumbnail for image ' . $imageResult['image']->id . ' - ' . $imageResult['error']);
+            return response()->json(['image' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
+          }
+        }
+      }
 
       $submission = Submission::find($id);
       if ($submission->user_id !== $user->id) {
@@ -74,6 +103,12 @@ class CommentController extends Controller {
 
     $anonymous = $request->input('anonymous', false);
     $text = $request->input('text', '');
+    $image = $request->image;
+
+    if (!$request->input('has_data', false)) { // Requests that exceed post_max_size will trigger this.
+      $this->log($user->id, 'Create comment - max post size exceeded');
+      return response()->json(['image' => 'Image too large (3 MB).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
 
     $comment = new Comment([
       'user_id' => $user->id,
@@ -85,6 +120,25 @@ class CommentController extends Controller {
 
     if ($comment->save()) {
       $this->log($user->id, 'Create comment ' . $comment->id . ' - success');
+
+      if (isset($image)) {
+        $manager = new ImageManager(array('driver' => 'gd'));
+        $space = Util::connectToSpace();
+        
+        $imageResult = $this->saveImage($manager, $space, $image, $user->id, 'images', Comment::class, $comment->id, null);
+
+        if ($imageResult['error']) {
+          $this->log($user->id, 'Create comment ' . $comment->id . ' - ' . $imageResult['error']);
+          return response()->json(['image' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } else {
+          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 250);
+  
+          if ($thumbnailResult['error']) {
+            $this->log($user->id, 'Create comment '. $comment->id . ' thumbnail for image ' . $imageResult['image']->id . ' - ' . $imageResult['error']);
+            return response()->json(['image' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
+          }
+        }
+      }
 
       $parentComment = Comment::find($id);
       $submission = Util::findCommentParent($parentComment);

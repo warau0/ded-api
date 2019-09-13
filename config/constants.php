@@ -12,7 +12,7 @@ return [
   |
   */
   'NOT_DELETED' => '1111-11-11 00:00:00',
-  'VERSION' => '0.13.0',
+  'VERSION' => '0.14.0',
   'LOG' => [
     'SUBMISSION' => 1,
     'PLAN' => 2,
@@ -21,5 +21,6 @@ return [
     'USER' => 5,
     'COMMENT' => 6,
     'NOTIFICATION' => 7,
+    'UPLOAD' => 8,
   ],
 ];

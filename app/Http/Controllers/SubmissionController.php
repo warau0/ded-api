@@ -7,15 +7,16 @@ use App\Tag;
 use App\Image;
 use App\Streak;
 use App\Facades\Util;
+use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Intervention\Image\Exception\NotWritableException;
-use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
 use Carbon\Carbon;
 
 class SubmissionController extends Controller {
+  use SavesImages;
+
   private function log($userID, $msg) {
     Util::logLine(config('constants.LOG.SUBMISSION'), $userID, $msg);
   }
@@ -133,101 +134,25 @@ class SubmissionController extends Controller {
 
       $manager = new ImageManager(array('driver' => 'gd'));
       $space = Util::connectToSpace();
-
+      
       // Upload images
       foreach ($request->images as $image) {
-        try {
-          $interventionImage = $manager->make($image);
-          $hash = Util::imageHash($interventionImage);
-        } catch(NotReadableException $e) { // Single files that exceed upload_max_filesize will trigger this.
+        $imageResult = $this->saveImage($manager, $space, $image, $user->id, 'images', Submission::class, $submission->id, null);
+
+        if ($imageResult['error']) {
           $submission->images()->delete();
           $submission->delete();
-          $this->log($user->id, 'Create submission ' . $submission->id . ' - not readable image');
-          return response()->json(['images' => 'Image too large (3 MB) or damaged, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        if (!env('ALLOW_DUPLICATE_SUBMISSIONS')) {
-          $existingImage = Image::where([
-            ['size', '=', $image->getSize()],
-            ['hash', '=', $hash],
-            ['image_parent_type', '=', Submission::class],
-          ])->first();
-          if ($existingImage) {
-            $submission->images()->delete();
-            $submission->delete();
-            $this->log($user->id, 'Create submission ' . $submission->id . ' - duplicate image');
-            return response()->json(['images' => 'Duplicate image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-          }
-        }
-
-        if (!Util::imageValidMime($interventionImage)) {
-          $submission->images()->delete();
-          $submission->delete();
-          $this->log($user->id, 'Create submission ' . $submission->id . ' - invalid mime');
-          return response()->json(['images' => 'Not a jpeg, png or gif image, submission failed.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $imgName = Util::imageName($image->getClientOriginalName());
-
-        $fullPath = env('SPACES_FOLDER') . '/' . $user->id . '/images/' . $imgName;
-
-        // Use UploadedFile path to tmp upload file because intervention stream breaks gifs.
-        $response = $space->UploadFile($image->path(), 'public', $fullPath, $interventionImage->mime());
-        // TODO Handle failed upload.
-
-        $this->log($user->id, 'Create submission ' . $submission->id . ' - save image ' . $fullPath);
-        $imageModel = new Image([
-          'file' => $fullPath,
-          'url' => Util::replaceCDN($response['ObjectURL']),
-          'hash' => $hash,
-          'size' => $image->getSize(),
-          'height' => $interventionImage->height(),
-          'width' => $interventionImage->width(),
-          'mime' => $interventionImage->mime(),
-          'image_parent_id' => $submission->id,
-          'image_parent_type' => Submission::class,
-        ]);
-
-        if ($imageModel->save()) {
-          try {
-            // Transparent parts of gif turn blue, png turn black
-            $interventionImage->fit(250, 250, function ($constraint) {
-                $constraint->upsize();
-            })->encode('jpg');
-          } catch(Exception $e) {
-            $this->log($user->id, 'Create submission ' . $submission->id . ' - thumbnailing failed for image ' . $imageModel->id);
-            return response()->json(['error' => 'Failed generating thumbnail, submission failed.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-          }
-
-          $thumbnailPath = env('SPACES_FOLDER') . '/' . $user->id . '/thumbnails/' . preg_replace('/.(gif|jpeg|png)/', '.jpg', $imgName);
-
-          $thumbResponse = $space->UploadFile($interventionImage->stream(), 'public', $thumbnailPath, $interventionImage->mime());
-          // TODO Handle failed upload.
-            
-          $this->log($user->id, 'Create submission ' . $submission->id . ' - save thumbnail ' . $thumbnailPath);
-
-          $thumbSize = $interventionImage->getSize();
-          $thumbnailModel = new Image([
-            'file' => $thumbnailPath,
-            'url' => Util::replaceCDN($thumbResponse['ObjectURL']),
-            'hash' => Util::imageHash($interventionImage),
-            'size' => $interventionImage->filesize(),
-            'height' => $interventionImage->height(),
-            'width' => $interventionImage->width(),
-            'mime' => $interventionImage->mime(),
-            'image_parent_id' => $imageModel->id,
-            'image_parent_type' => Image::class,
-          ]);
-
-          if (!$thumbnailModel->save()) {
-            $submission->images()->delete();
-            $submission->delete();
-            $this->log($user->id, 'Create submission ' . $submission->id . ' - failed saving thumbnail for image ' . $imageModel->id);
-            return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-          }
+          $this->log($user->id, 'Create submission - ' . $imageResult['error']);
+          return response()->json(['images' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
         } else {
-          $this->log($user->id, 'Create submission ' . $submission->id . ' - failed saving image');
-          return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 250);
+  
+          if ($thumbnailResult['error']) {
+            $submission->images()->delete();
+            $submission->delete();
+            $this->log($user->id, 'Create submission '. $submission->id . ' thumbnail for image ' . $imageResult['image']->id . ' - ' . $imageResult['error']);
+            return response()->json(['images' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
+          }
         }
       }
 

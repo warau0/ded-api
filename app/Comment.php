@@ -38,4 +38,8 @@ class Comment extends Model {
       ->orderBy('created_at', 'desc')
       ->with(['comments.user.avatar', 'user.avatar']);
   }
+
+  public function image() {
+    return $this->morphOne(Image::class, 'imageable', 'image_parent_type', 'image_parent_id');
+  }
 }
