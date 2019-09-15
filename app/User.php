@@ -35,4 +35,8 @@ class User extends Model {
   public function avatar() {
     return $this->morphOne(Image::class, 'imageable', 'image_parent_type', 'image_parent_id');
   }
+
+  public function socialLinks() {
+    return $this->hasMany(SocialLink::class);
+  }
 }

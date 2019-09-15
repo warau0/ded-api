@@ -53,4 +53,7 @@ Route::group(['middleware' => 'protect'], function() {
 
   Route::get('avatar', 'UserController@getAvatar');
   Route::post('avatar', 'UserController@updateAvatar');
+
+  Route::post('social_links', 'SocialLinkController@store');
+  Route::delete('social_links/{id}', 'SocialLinkController@destroy');
 });

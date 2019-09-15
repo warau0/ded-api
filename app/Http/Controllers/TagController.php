@@ -80,12 +80,12 @@ class TagController extends Controller {
     $user = $request->user;
 
     if (!$tag) {
-      $this->log($tag->user_id, 'Delete tag ' . $id . ' - not found');
+      $this->log($user->id, 'Delete tag ' . $id . ' - not found');
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
     if ($user->id !== $tag->user_id) {
-      $this->log($tag->user_id, 'Delete tag ' . $id . ' - forbidden');
+      $this->log($user->id, 'Delete tag ' . $id . ' - forbidden');
       return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
     }
 
