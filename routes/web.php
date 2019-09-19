@@ -42,6 +42,7 @@ Route::group(['middleware' => 'protect'], function() {
   Route::post('submissions', 'SubmissionController@store');
   Route::delete('submissions/{id}', 'SubmissionController@destroy');
   Route::post('submissions/{id}/comments', 'CommentController@storeSubmission');
+  Route::put('submissions/{id}/like', 'SubmissionController@likeSubmission');
 
   Route::get('streaks/current', 'StreakController@show');
 

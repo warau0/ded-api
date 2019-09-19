@@ -6,6 +6,7 @@ use App\Submission;
 use App\Tag;
 use App\Image;
 use App\Streak;
+use App\SubmissionLike;
 use App\Facades\Util;
 use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
@@ -68,6 +69,15 @@ class SubmissionController extends Controller {
       ->limit(6)
       ->get();
 
+    $submissionLike = null;
+
+    if ($user) {
+      $submissionLike = SubmissionLike::query()->where([
+        ['user_id', '=', $user->id],
+        ['submission_id', '=', $submission->id],
+      ])->first();
+    }
+
     return response()->json([
       'submission' => $submission,
       'next_submission_id' => $nextSubmission ? $nextSubmission->id : null,
@@ -75,6 +85,7 @@ class SubmissionController extends Controller {
       'previous_submission_id' => $previousSubmission ? $previousSubmission->id : null,
       'previous_user_submission_id' => $previousUserSubmission ? $previousUserSubmission->id : null,
       'user_submissions' => $randomUserSubmissions,
+      'like' => $submissionLike,
     ], Response::HTTP_OK);
   }
 
@@ -213,5 +224,55 @@ class SubmissionController extends Controller {
     }
 
     return response()->json(['leaderboard' => $leaderboard, 'personal' => $personal], Response::HTTP_OK);
+  }
+
+  public function likeSubmission(Request $request, $id) {
+    $submission = Submission::find($id);
+
+    $user = $request->user;
+
+    if (!$submission) {
+      $this->log($user ? $user->id : null, 'Like submission ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    if ($request->input('like')) {
+      $existingLike = SubmissionLike::query()->where([
+        ['user_id', '=', $user->id],
+        ['submission_id', '=', $submission->id],
+      ])->first();
+
+      if ($existingLike) {
+        return response()->json(['like' => $existingLike], Response::HTTP_OK); 
+      }
+
+      $like = new SubmissionLike([
+        'user_id' => $user->id,
+        'submission_id' => $submission->id,
+      ]);
+
+      if ($like->save()) {
+        $this->log($user->id, 'Like submission ' . $submission->id . ' - success');
+        return response()->json(['like' => $like], Response::HTTP_OK);
+      } else {
+        $this->log($user->id, 'Like submission - failed');
+        return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+      }
+    } else {
+      $result = SubmissionLike::query()
+        ->where([
+          'user_id' => $user->id,
+          'submission_id' => $submission->id,
+        ])
+        ->delete();
+
+      if ($result) {
+        $this->log($user->id, 'Unlike submission ' . $submission->id . ' - success');
+        return response()->json(['like' => null], Response::HTTP_OK);
+      } else {
+        $this->log($user->id, 'Unlike submission - failed');
+        return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+      }
+    }
   }
 }
