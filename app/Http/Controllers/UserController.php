@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Submission;
 use App\User;
 use App\Image;
+use App\UserFollow;
 use App\Facades\Util;
 use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
@@ -32,7 +33,21 @@ class UserController extends Controller {
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
-    return response()->json(['user' => $user], Response::HTTP_OK);
+    $loggedInUser = $request->user;
+
+    $follow = null;
+    if ($loggedInUser) {
+      $follow = UserFollow::query()
+      ->where([
+        'user_id' => $loggedInUser->id,
+        'follow_id' => $user->id,
+      ])->first();
+    }
+
+    return response()->json([
+      'user' => $user,
+      'follow' => $follow,
+    ], Response::HTTP_OK);
   }
 
   public function submissions(Request $request, $id) {
@@ -112,5 +127,55 @@ class UserController extends Controller {
     ])->first();
 
     return response()->json(['avatar' => $avatar], Response::HTTP_OK);
+  }
+
+  public function followUser(Request $request, $id) {
+    $userToFollow = User::find($id);
+
+    $user = $request->user;
+
+    if (!$userToFollow) {
+      $this->log($user ? $user->id : null, 'Follow user ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    if ($request->input('follow')) {
+      $existingFollow = UserFollow::query()->where([
+        ['user_id', '=', $user->id],
+        ['follow_id', '=', $userToFollow->id],
+      ])->first();
+
+      if ($existingFollow) {
+        return response()->json(['follow' => $existingFollow], Response::HTTP_OK); 
+      }
+
+      $follow = new UserFollow([
+        'user_id' => $user->id,
+        'follow_id' => $userToFollow->id,
+      ]);
+
+      if ($follow->save()) {
+        $this->log($user->id, 'follow user ' . $userToFollow->id . ' - success');
+        return response()->json(['follow' => $follow], Response::HTTP_OK);
+      } else {
+        $this->log($user->id, 'follow user ' . $userToFollow->id . ' - failed');
+        return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+      }
+    } else {
+      $result = UserFollow::query()
+        ->where([
+          'user_id' => $user->id,
+          'follow_id' => $userToFollow->id,
+        ])
+        ->delete();
+
+      if ($result) {
+        $this->log($user->id, 'Unfollow user ' . $userToFollow->id . ' - success');
+        return response()->json(['follow' => null], Response::HTTP_OK);
+      } else {
+        $this->log($user->id, 'Unfollow user ' . $userToFollow->id . ' - failed');
+        return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+      }
+    }
   }
 }

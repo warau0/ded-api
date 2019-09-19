@@ -57,4 +57,6 @@ Route::group(['middleware' => 'protect'], function() {
 
   Route::post('social_links', 'SocialLinkController@store');
   Route::delete('social_links/{id}', 'SocialLinkController@destroy');
+
+  Route::put('users/{id}/follow', 'UserController@followUser');
 });

@@ -255,7 +255,7 @@ class SubmissionController extends Controller {
         $this->log($user->id, 'Like submission ' . $submission->id . ' - success');
         return response()->json(['like' => $like], Response::HTTP_OK);
       } else {
-        $this->log($user->id, 'Like submission - failed');
+        $this->log($user->id, 'Like submission ' . $submission->id . ' - failed');
         return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
       }
     } else {
@@ -270,7 +270,7 @@ class SubmissionController extends Controller {
         $this->log($user->id, 'Unlike submission ' . $submission->id . ' - success');
         return response()->json(['like' => null], Response::HTTP_OK);
       } else {
-        $this->log($user->id, 'Unlike submission - failed');
+        $this->log($user->id, 'Unlike submission ' . $submission->id . ' - failed');
         return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
       }
     }
