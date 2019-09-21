@@ -24,7 +24,7 @@ class UserController extends Controller {
     $user = User::query()
       ->where('username',  urldecode($id))
       ->orWhere('id', $id)
-      ->with('avatar', 'socialLinks')
+      ->with('avatar', 'socialLinks', 'roles')
       ->first();
 
     if (!$user) {

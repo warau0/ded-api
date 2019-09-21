@@ -7,11 +7,13 @@ class CreateUsersTable extends Migration {
   public function up() {
     $this->schema->create('users', function (Blueprint $table) {
       $table->bigIncrements('id')->unsigned();
-      $table->string('username')->unique();
+      $table->string('username');
       $table->string('email')->nullable();
       $table->string('password');
       $table->timestamps();
       $table->softDeletes();
+    
+      $table->unique(['username', 'deleted_at']);
     });
   }
 

@@ -39,4 +39,8 @@ class User extends Model {
   public function socialLinks() {
     return $this->hasMany(SocialLink::class);
   }
+
+  public function roles() {
+    return $this->belongsToMany(Role::class, 'user_roles');
+  }
 }
