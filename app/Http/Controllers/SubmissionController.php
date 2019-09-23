@@ -7,6 +7,7 @@ use App\Tag;
 use App\Image;
 use App\Streak;
 use App\SubmissionLike;
+use App\UserFollow;
 use App\Facades\Util;
 use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
@@ -31,6 +32,27 @@ class SubmissionController extends Controller {
       ->simplePaginate(40);
 
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);
+  }
+
+  public function followedIndex(Request $request) {
+    $user = $request->user;
+
+    $followedIDs = UserFollow::query()
+      ->where('user_id', $user->id)
+      ->pluck('follow_id');
+
+    $submissions = Submission::query()
+      ->with('images.thumbnail')
+      ->orderBy('id', 'desc')
+      ->where('private', false)
+      ->whereHas('images')
+      ->whereIn('user_id', $followedIDs)
+      ->simplePaginate(20);
+
+  return response()->json([
+    'submissions' => $submissions,
+    'followed' => $followedIDs,
+  ], Response::HTTP_OK);
   }
 
   public function show(Request $request, $id) {

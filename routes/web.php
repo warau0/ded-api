@@ -47,6 +47,8 @@ Route::group(['middleware' => 'protect'], function() {
   Route::post('submissions/{id}/comments', 'CommentController@storeSubmission');
   Route::put('submissions/{id}/like', 'SubmissionController@likeSubmission');
 
+  Route::get('followed_submissions', 'SubmissionController@followedIndex');
+
   Route::get('streaks/current', 'StreakController@show');
 
   Route::put('comments/{id}', 'CommentController@update');
