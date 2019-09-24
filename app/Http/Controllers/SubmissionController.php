@@ -49,10 +49,10 @@ class SubmissionController extends Controller {
       ->whereIn('user_id', $followedIDs)
       ->simplePaginate(20);
 
-  return response()->json([
-    'submissions' => $submissions,
-    'followed' => $followedIDs,
-  ], Response::HTTP_OK);
+    return response()->json([
+      'submissions' => $submissions,
+      'followed' => $followedIDs,
+    ], Response::HTTP_OK);
   }
 
   public function show(Request $request, $id) {

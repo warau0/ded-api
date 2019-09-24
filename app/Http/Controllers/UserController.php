@@ -6,6 +6,7 @@ use App\Submission;
 use App\User;
 use App\Image;
 use App\UserFollow;
+use App\SubmissionLike;
 use App\Facades\Util;
 use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
@@ -171,11 +172,37 @@ class UserController extends Controller {
 
       if ($result) {
         $this->log($user->id, 'Unfollow user ' . $userToFollow->id . ' - success');
-        return response()->json(['follow' => null], Response::HTTP_OK);
+        return response()->json($result, Response::HTTP_OK);
       } else {
         $this->log($user->id, 'Unfollow user ' . $userToFollow->id . ' - failed');
         return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
       }
     }
+  }
+
+  public function likedSubmissionIndex(Request $request, $id) {
+    $user = User::query()
+      ->where('username',  urldecode($id))
+      ->orWhere('id', $id)
+      ->with('avatar', 'socialLinks', 'roles')
+      ->first();
+
+    if (!$user) {
+      $loggedInUser = $request->user;
+      $this->log($loggedInUser ? $loggedInUser->id : null, 'User liked submissions ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    $likes = SubmissionLike::query()
+    ->with('submission.images.thumbnail')
+    ->join('submissions', 'submission_likes.submission_id', '=', 'submissions.id')
+    ->orderBy('submission_likes.created_at', 'desc')
+    ->where([
+      ['submission_likes.user_id', '=', $user->id],
+      ['private', '=', false],
+    ])
+    ->simplePaginate(40);
+
+    return response()->json(['likes' => $likes], Response::HTTP_OK);
   }
 }

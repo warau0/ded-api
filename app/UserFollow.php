@@ -9,6 +9,9 @@ use App\Extensions\Database\Eloquent\SoftDeletes;
 class UserFollow extends Model {
   use softDeletes;
 
+  protected $primaryKey = null;
+  public $incrementing = false;
+
   protected $fillable = [
     'user_id',
     'follow_id',

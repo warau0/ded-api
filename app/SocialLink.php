@@ -8,9 +8,6 @@ use App\Extensions\Database\Eloquent\SoftDeletes;
 class SocialLink extends Model {
   use softDeletes;
 
-  protected $primaryKey = null;
-  public $incrementing = false;
-
   protected $fillable = [
     'user_id',
     'link',
