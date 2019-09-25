@@ -24,8 +24,12 @@ class UserController extends Controller {
   public function index (Request $request) {
     $users = User::query()
       ->select('users.id', 'users.username', 'streaks.count')
-      ->leftJoin('streaks', 'streaks.user_id', '=', 'users.id')
-      ->whereNull('streaks.end')
+      ->leftJoin('streaks', function ($join) {
+        $join
+          ->on('users.id', '=', 'streaks.user_id')
+          ->whereNull('end')
+          ->where('streaks.deleted_at', '=', config('constants.NOT_DELETED'));
+      })
       ->orderBy('streaks.count', 'desc')
       ->orderBy('streaks.created_at', 'asc')
       ->orderBy('users.username', 'asc')
