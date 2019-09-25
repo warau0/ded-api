@@ -21,6 +21,20 @@ class UserController extends Controller {
     Util::logLine(config('constants.LOG.USER'), $userID, $msg);
   }
 
+  public function index (Request $request) {
+    $users = User::query()
+      ->select('users.id', 'users.username', 'streaks.count')
+      ->leftJoin('streaks', 'streaks.user_id', '=', 'users.id')
+      ->whereNull('streaks.end')
+      ->orderBy('streaks.count', 'desc')
+      ->orderBy('streaks.created_at', 'asc')
+      ->orderBy('users.username', 'asc')
+      ->with('avatar')
+      ->simplePaginate(56);
+
+    return response()->json(['users' => $users], Response::HTTP_OK);
+  }
+
   public function show(Request $request, $id) {
     $user = User::query()
       ->where('username',  urldecode($id))
@@ -200,6 +214,7 @@ class UserController extends Controller {
     ->where([
       ['submission_likes.user_id', '=', $user->id],
       ['private', '=', false],
+      ['submissions.deleted_at', '=', config('constants.NOT_DELETED')],
     ])
     ->simplePaginate(40);
 
