@@ -21,7 +21,7 @@ class UserController extends Controller {
     Util::logLine(config('constants.LOG.USER'), $userID, $msg);
   }
 
-  public function index (Request $request) {
+  public function index(Request $request) {
     $users = User::query()
       ->select('users.id', 'users.username', 'streaks.count')
       ->leftJoin('streaks', function ($join) {
@@ -35,6 +35,31 @@ class UserController extends Controller {
       ->orderBy('users.username', 'asc')
       ->with('avatar')
       ->simplePaginate(56);
+
+    return response()->json(['users' => $users], Response::HTTP_OK);
+  }
+
+  public function search(Request $request) {
+    $this->validate($request, [
+      'query' => 'required|string|max:255',
+    ]);
+
+    $query = $request->input('query');
+
+    $users = User::query()
+      ->select('users.id', 'users.username', 'streaks.count')
+      ->where('username', 'like', '%' . $query . '%')
+      ->leftJoin('streaks', function ($join) {
+        $join
+          ->on('users.id', '=', 'streaks.user_id')
+          ->whereNull('end')
+          ->where('streaks.deleted_at', '=', config('constants.NOT_DELETED'));
+      })
+      ->orderBy('streaks.count', 'desc')
+      ->orderBy('streaks.created_at', 'asc')
+      ->orderBy('users.username', 'asc')
+      ->with('avatar')
+      ->paginate(56);
 
     return response()->json(['users' => $users], Response::HTTP_OK);
   }
