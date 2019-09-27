@@ -297,4 +297,31 @@ class SubmissionController extends Controller {
       }
     }
   }
+
+  public function taggedSubmissionIndex(Request $request) {
+    /* Back up version if join doesn't work properly.
+      $submissionTags = \DB::query()
+        ->from('submission_tags')
+        ->where('tag_id', '=', $request->input('tag_id', ''))
+        ->pluck('submission_id');
+
+      $submissions = Submission::query()
+        ->with('images.thumbnail')
+        ->whereIn('id', $submissionTags)
+        ->orderBy('submissions.created_at', 'desc')
+        ->where('private', '=', false)
+        ->paginate(40);
+    */
+    $submissions = Submission::query()
+      ->with('images.thumbnail')
+      ->join('submission_tags', function ($query) use ($request) {
+        $query->on('submissions.id', '=', 'submission_tags.submission_id');
+        $query->where('submission_tags.tag_id', '=', $request->input('tag_id', ''));
+      })
+      ->orderBy('submissions.created_at', 'desc')
+      ->where('private', '=', false)
+      ->paginate(40);
+
+    return response()->json(['submissions' => $submissions], Response::HTTP_OK);
+  }
 }

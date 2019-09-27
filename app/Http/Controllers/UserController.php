@@ -68,7 +68,7 @@ class UserController extends Controller {
     $user = User::query()
       ->where('username',  urldecode($id))
       ->orWhere('id', $id)
-      ->with('avatar', 'socialLinks', 'roles')
+      ->with('avatar', 'socialLinks', 'roles', 'tags')
       ->first();
 
     if (!$user) {
@@ -227,7 +227,6 @@ class UserController extends Controller {
     $user = User::query()
       ->where('username',  urldecode($id))
       ->orWhere('id', $id)
-      ->with('avatar', 'socialLinks', 'roles')
       ->first();
 
     if (!$user) {

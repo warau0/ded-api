@@ -18,6 +18,7 @@ Route::group(['middleware' => 'auth'], function() {
   Route::get('submissions', 'SubmissionController@index');
   Route::get('submissions/{id}', 'SubmissionController@show');
   Route::get('submissions/{id}/comments', 'CommentController@showSubmission');
+  Route::get('tagged_submissions', 'SubmissionController@taggedSubmissionIndex');
 
   Route::get('users', 'UserController@index');
   Route::get('users/search', 'UserController@search');
