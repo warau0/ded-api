@@ -71,7 +71,7 @@ class CommentController extends Controller {
           $this->log($user->id, 'Create comment ' . $comment->id . ' - ' . $imageResult['error']);
           return response()->json(['image' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
         } else {
-          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 250);
+          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 300);
   
           if ($thumbnailResult['error']) {
             $this->log($user->id, 'Create comment '. $comment->id . ' thumbnail for image ' . $imageResult['image']->id . ' - ' . $imageResult['error']);
@@ -131,7 +131,7 @@ class CommentController extends Controller {
           $this->log($user->id, 'Create comment ' . $comment->id . ' - ' . $imageResult['error']);
           return response()->json(['image' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
         } else {
-          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 250);
+          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 300);
   
           if ($thumbnailResult['error']) {
             $this->log($user->id, 'Create comment '. $comment->id . ' thumbnail for image ' . $imageResult['image']->id . ' - ' . $imageResult['error']);

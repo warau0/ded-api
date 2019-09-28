@@ -18,13 +18,13 @@ Route::group(['middleware' => 'auth'], function() {
   Route::get('submissions', 'SubmissionController@index');
   Route::get('submissions/{id}', 'SubmissionController@show');
   Route::get('submissions/{id}/comments', 'CommentController@showSubmission');
-  Route::get('tagged_submissions', 'SubmissionController@taggedSubmissionIndex');
 
   Route::get('users', 'UserController@index');
   Route::get('users/search', 'UserController@search');
   Route::get('users/{id}', 'UserController@show');
   Route::get('users/{id}/submissions', 'UserController@submissions');
   Route::get('users/{id}/liked_submissions', 'UserController@likedSubmissionIndex');
+  Route::get('users/{id}/tagged_submissions', 'SubmissionController@taggedSubmissionIndex');
 
   Route::get('/streaks/end', 'StreakController@endExpired');
 

@@ -8,6 +8,7 @@ use App\Image;
 use App\Streak;
 use App\SubmissionLike;
 use App\UserFollow;
+use App\User;
 use App\Facades\Util;
 use App\Traits\SavesImages;
 use App\Http\Controllers\Controller;
@@ -111,8 +112,55 @@ class SubmissionController extends Controller {
     ], Response::HTTP_OK);
   }
 
-  public function update(Request $request) {
-    // TODO
+  public function update(Request $request, $id) {
+    $this->validate($request, [
+      'description' => 'sometimes|string|max:1000|nullable',
+      'hours' => 'sometimes|numeric|nullable',
+      'nsfw' => 'sometimes|numeric|nullable|in:1,0',
+      'private' => 'sometimes|numeric|nullable|in:1,0',
+      'tags.*.value' => 'required|string',
+      'tags.*.id' => 'sometimes|integer|nullable',
+    ]);
+
+    $submission = Submission::find($id);
+    $user = $request->user;
+
+    if (!$submission) {
+      $this->log($user->id, 'Edit submission ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    $submission->description = $request->input('description', '');
+    $submission->hours = $request->input('hours', '0.0');
+    $submission->nsfw = $request->input('nsfw', false);
+    $submission->private = $request->input('private', false);
+
+    // Create unknown tags
+    $tagIDs = [];
+    $tags = json_decode($request->input('tags', []));
+    foreach ($tags as $tagInput) {
+      $tagID = Util::findExistingTagID($tagInput, $user->id);
+      if (!$tagID) {
+        $tag = new Tag([
+          'user_id' => $user->id,
+          'text' => $tagInput->value,
+        ]);
+        $tag->save();
+        $this->log($user->id, 'Create submission - Create tag ' . $tag->id);
+        $tagID = $tag->id;
+      }
+      array_push($tagIDs, $tagID);
+    }
+
+    if ($submission->save()) {
+      $submission->tags()->sync($tagIDs); // Attach tags
+
+      $this->log($user->id, 'Edit submission ' . $submission->id . ' - success');
+      return response()->json($submission, Response::HTTP_OK);
+    } else {
+      $this->log($user->id, 'Edit submission - failed');
+      return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
   }
 
   public function store(Request $request) {
@@ -178,7 +226,7 @@ class SubmissionController extends Controller {
           $this->log($user->id, 'Create submission - ' . $imageResult['error']);
           return response()->json(['images' => $imageResult['error']], Response::HTTP_UNPROCESSABLE_ENTITY);
         } else {
-          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 250);
+          $thumbnailResult = $this->saveImage($manager, $space, $image, $user->id, 'thumbnails', Image::class, $imageResult['image']->id, 300);
   
           if ($thumbnailResult['error']) {
             $submission->images()->delete();
@@ -298,20 +346,23 @@ class SubmissionController extends Controller {
     }
   }
 
-  public function taggedSubmissionIndex(Request $request) {
-    /* Back up version if join doesn't work properly.
-      $submissionTags = \DB::query()
-        ->from('submission_tags')
-        ->where('tag_id', '=', $request->input('tag_id', ''))
-        ->pluck('submission_id');
+  public function taggedSubmissionIndex(Request $request, $id) {
+    $user = User::query()
+      ->where('username',  urldecode($id))
+      ->orWhere('id', $id)
+      ->first();
 
-      $submissions = Submission::query()
-        ->with('images.thumbnail')
-        ->whereIn('id', $submissionTags)
-        ->orderBy('submissions.created_at', 'desc')
-        ->where('private', '=', false)
-        ->paginate(40);
-    */
+    if (!$user) {
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    $loggedInUser = $request->user;
+    if ($loggedInUser && $user->id === $loggedInUser->id) {
+      $where = [];
+    } else {
+      $where = [['private', '=', false]];
+    }
+
     $submissions = Submission::query()
       ->with('images.thumbnail')
       ->join('submission_tags', function ($query) use ($request) {
@@ -319,7 +370,7 @@ class SubmissionController extends Controller {
         $query->where('submission_tags.tag_id', '=', $request->input('tag_id', ''));
       })
       ->orderBy('submissions.created_at', 'desc')
-      ->where('private', '=', false)
+      ->where($where)
       ->paginate(40);
 
     return response()->json(['submissions' => $submissions], Response::HTTP_OK);

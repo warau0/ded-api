@@ -25,4 +25,8 @@ class Tag extends Model {
   public function user() {
     return $this->belongsTo(User::class);
   }
+
+  public function submissions() {
+    return $this->belongsToMany(Submission::class, 'submission_tags');
+  }
 }
