@@ -115,7 +115,7 @@ class SubmissionController extends Controller {
   public function update(Request $request, $id) {
     $this->validate($request, [
       'description' => 'sometimes|string|max:1000|nullable',
-      'hours' => 'sometimes|numeric|nullable',
+      'hours' => 'sometimes|numeric|min:0|max:999|nullable',
       'nsfw' => 'sometimes|numeric|nullable|in:1,0',
       'private' => 'sometimes|numeric|nullable|in:1,0',
       'tags.*.value' => 'required|string',
@@ -171,7 +171,7 @@ class SubmissionController extends Controller {
   public function store(Request $request) {
     $this->validate($request, [
       'description' => 'sometimes|string|max:1000|nullable',
-      'hours' => 'sometimes|numeric|nullable',
+      'hours' => 'sometimes|numeric|min:0|max:999|nullable',
       'nsfw' => 'sometimes|numeric|nullable|in:1,0',
       'private' => 'sometimes|numeric|nullable|in:1,0',
       'tags.*.value' => 'required|string',
