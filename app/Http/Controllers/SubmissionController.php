@@ -130,6 +130,11 @@ class SubmissionController extends Controller {
       return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
     }
 
+    if ($user->id !== $submission->user_id) {
+      $this->log($user->id, 'Edit submission ' . $id . ' - forbidden');
+      return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
+    }
+
     $submission->description = $request->input('description', '');
     $submission->hours = $request->input('hours', '0.0');
     $submission->nsfw = $request->input('nsfw', false);
@@ -265,8 +270,29 @@ class SubmissionController extends Controller {
     }
   }
 
-  public function destroy(Request $request) {
-    // TODO
+  public function destroy(Request $request, $id) {
+    $submission = Submission::find($id);
+    $user = $request->user;
+
+    if (!$submission) {
+      $this->log($user->id, 'Delete submission ' . $id . ' - not found');
+      return response()->json(['error' => 'ID not found.'], Response::HTTP_NOT_FOUND);
+    }
+
+    if ($user->id !== $submission->user_id) {
+      $this->log($user->id, 'Delete submission ' . $id . ' - forbidden');
+      return response()->json(['error' => 'No access.'], Response::HTTP_FORBIDDEN);
+    }
+
+    $submission->images()->delete();
+    $submission->tags()->sync([]);
+    if ($submission->delete()) {
+      $this->log($user->id, 'Delete submission ' . $id . ' - success');
+      return response()->json($submission, Response::HTTP_OK);
+    } else {
+      $this->log($user->id, 'Delete submission ' . $id . ' - failed');
+      return response()->json(['error' => 'An internal server error occurred.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
   }
 
   public function monthlyLeaderboard(Request $request) {
